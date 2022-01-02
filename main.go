@@ -30,12 +30,18 @@ func main() {
 		Choice{
 			Description: "Start a server",
 			Action: func() error {
-				javaExePath, err := ensureJavaIsInstalled(16)
+				servers, err := findServers()
 				if err != nil {
 					return err
 				}
-				Ok.Printf("[+] Java executable is %s\n", javaExePath)
-				return nil
+
+				Info.Println("The following servers have been found:")
+				c, err := makeChoiceMenu(true, makeServersMenuItem(servers)...)
+				if err != nil {
+					return err
+				}
+
+				return c.Action()
 			},
 		},
 		Choice{

@@ -1,6 +1,9 @@
 package main
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 func getWorkDir() string {
 	baseDir := os.Getenv("BASE_DIR")
@@ -9,4 +12,43 @@ func getWorkDir() string {
 	}
 
 	return "."
+}
+
+func makeServersMenuItem(servers []Server) []Choice {
+	result := []Choice{}
+
+	for _, s := range servers {
+		desc := fmt.Sprintf("%s (", s.Name)
+		if s.Version == nil {
+			desc += "?? on ??"
+		} else {
+			desc += fmt.Sprintf("%s on ", s.Version.ID)
+			switch s.Type {
+			case Vanilla:
+				desc += "Vanilla"
+			case Fabric:
+				desc += "Fabric"
+			case Forge:
+				desc += "Forge"
+			case Paper:
+				desc += "PaperMC"
+			}
+		}
+
+		if s.HasGit {
+			desc += " - Git"
+		}
+		if s.HasStartScript {
+			desc += ", Start Script"
+		}
+
+		desc += ")"
+
+		result = append(result, Choice{
+			Description: desc,
+			Action:      s.Start,
+		})
+	}
+
+	return result
 }

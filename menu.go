@@ -11,7 +11,7 @@ import (
 type Choice struct {
 	Description string
 	Action      func() error
-	PrintFn     func()
+	PrintFn     func(position int, noDefault bool)
 }
 
 var ErrNotEnoughChoices = errors.New("At least one choice is required")
@@ -25,9 +25,13 @@ func makeChoiceMenu(noDefault bool, choices ...Choice) (*Choice, error) {
 	for run {
 		for i, c := range choices {
 			if c.PrintFn != nil {
-				c.PrintFn()
+				c.PrintFn(i, noDefault)
 			} else {
-				color.Cyan("- [%d] %s", i, c.Description)
+				if noDefault {
+					color.Cyan("- [%d] %s", i+1, c.Description)
+				} else {
+					color.Cyan("- [%d] %s", i, c.Description)
+				}
 			}
 		}
 		if noDefault {

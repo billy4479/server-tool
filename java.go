@@ -13,6 +13,7 @@ import (
 	"runtime"
 
 	"github.com/Jeffail/gabs/v2"
+	"github.com/dustin/go-humanize"
 )
 
 func javaExeName() string {
@@ -75,6 +76,7 @@ func installJava(javaVersion int) error {
 
 	url := ""
 	name := ""
+	var size uint64 = 0
 	var checksum []byte = nil
 
 	for _, openjdk := range j.Children() {
@@ -88,6 +90,7 @@ func installJava(javaVersion int) error {
 			pack := binary.Search("package")
 			url = pack.Search("link").Data().(string)
 			name = pack.Search("name").Data().(string)
+			size = uint64(pack.Search("size").Data().(float64))
 			checksum, err = hex.DecodeString(pack.Search("checksum").Data().(string))
 			if err != nil {
 				return err
@@ -101,7 +104,7 @@ func installJava(javaVersion int) error {
 		return errors.New("Unable to find needed variables in JSON response")
 	}
 
-	Info.Printf("[+] Downloading %s\n", name)
+	Info.Printf("[+] Downloading %s (%s)\n", name, humanize.Bytes(size))
 
 	res, err = http.Get(url)
 	if err != nil {
