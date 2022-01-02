@@ -11,7 +11,7 @@ import (
 func main() {
 	color.New(color.FgBlue, color.Bold).Println("[*] Server-Tool")
 
-	fmt.Printf("OS: %s, Arch: %s\n", runtime.GOOS, runtime.GOARCH)
+	fmt.Printf("[+] OS: %s, Arch: %s\n", runtime.GOOS, runtime.GOARCH)
 
 	if (runtime.GOOS != "windows" &&
 		runtime.GOOS != "linux") ||
@@ -26,8 +26,8 @@ func main() {
 		Info.Printf("[+] Using %s as work directory\n", baseDir)
 	}
 
-	c, err := makeChoiceMenu(false,
-		Choice{
+	c, err := makeoptionMenu(false,
+		option{
 			Description: "Start a server",
 			Action: func() error {
 				servers, err := findServers()
@@ -36,7 +36,7 @@ func main() {
 				}
 
 				Info.Println("The following servers have been found:")
-				c, err := makeChoiceMenu(true, makeServersMenuItem(servers)...)
+				c, err := makeoptionMenu(true, makeServersMenuItem(servers)...)
 				if err != nil {
 					return err
 				}
@@ -44,7 +44,7 @@ func main() {
 				return c.Action()
 			},
 		},
-		Choice{
+		option{
 			Description: "Create new a server",
 			Action: func() error {
 				Error.Println("[!] TODO")

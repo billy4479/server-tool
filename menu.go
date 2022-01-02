@@ -8,22 +8,22 @@ import (
 	"github.com/fatih/color"
 )
 
-type Choice struct {
+type option struct {
 	Description string
 	Action      func() error
 	PrintFn     func(position int, noDefault bool)
 }
 
-var ErrNotEnoughChoices = errors.New("At least one choice is required")
+var ErrNotEnoughoptions = errors.New("At least one option is required")
 
-func makeChoiceMenu(noDefault bool, choices ...Choice) (*Choice, error) {
-	if len(choices) == 0 {
-		return nil, ErrNotEnoughChoices
+func makeoptionMenu(noDefault bool, options ...option) (*option, error) {
+	if len(options) == 0 {
+		return nil, ErrNotEnoughoptions
 	}
 
 	run := true
 	for run {
-		for i, c := range choices {
+		for i, c := range options {
 			if c.PrintFn != nil {
 				c.PrintFn(i, noDefault)
 			} else {
@@ -35,9 +35,9 @@ func makeChoiceMenu(noDefault bool, choices ...Choice) (*Choice, error) {
 			}
 		}
 		if noDefault {
-			Info.Printf("Your choice [1-%d]: ", len(choices))
+			Info.Printf("Your option [1-%d]: ", len(options))
 		} else {
-			Info.Printf("Your choice [0-%d] (default: 0): ", len(choices)-1)
+			Info.Printf("Your option [0-%d] (default: 0): ", len(options)-1)
 		}
 		input := ""
 		fmt.Scanln(&input)
@@ -47,22 +47,22 @@ func makeChoiceMenu(noDefault bool, choices ...Choice) (*Choice, error) {
 				n -= 1
 			}
 
-			if n >= len(choices) || n < 0 {
+			if n >= len(options) || n < 0 {
 				if noDefault {
-					Warn.Printf("Choice %d was not found.\n", inputN)
+					Warn.Printf("option %d was not found.\n", inputN)
 					continue
 				}
-				Warn.Printf("Choice %d was not found, falling back on default.\n", inputN)
-				return &choices[0], nil
+				Warn.Printf("option %d was not found, falling back on default.\n", inputN)
+				return &options[0], nil
 			}
 
-			Ok.Printf("Choice %d selected.\n", inputN)
-			return &choices[n], nil
+			Ok.Printf("option %d selected.\n", inputN)
+			return &options[n], nil
 		} else if noDefault {
-			Warn.Println("Invalid choice.")
+			Warn.Println("Invalid option.")
 		}
 		run = noDefault
 	}
-	Ok.Printf("Default choice selected.\n")
-	return &choices[0], nil
+	Ok.Printf("Default option selected.\n")
+	return &options[0], nil
 }
