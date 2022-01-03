@@ -1,12 +1,17 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
+	"path"
 	"path/filepath"
 )
 
 var (
+	ErrAborted = errors.New("Aborted due to a failed command")
+
 	cacheDir  string
 	configDir string
 )
@@ -79,4 +84,51 @@ func makeServersMenuItem(servers []Server) []Option {
 	}
 
 	return result
+}
+
+func runCmdPretty(verbose bool, must bool, workDir string, name string, args ...string) (bool, error) {
+	{
+		cmdLine := name
+		if filepath.IsAbs(name) {
+			_, cmdLine = path.Split(name)
+		}
+
+		for _, arg := range args {
+			cmdLine += " " + arg
+		}
+
+		Info.Printf("[+] Running \"%s\"\n", cmdLine)
+	}
+	cmd := exec.Command(name, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	cmd.Stdin = os.Stdin
+	cmd.Dir = workDir
+
+	if verbose {
+		Info.Println("[+] Start of command output")
+	}
+	err := cmd.Run()
+	if verbose {
+		Info.Println("[+] End of command output")
+	}
+
+	if err != nil {
+		if cmd.ProcessState == nil {
+			return false, err
+		}
+		if !cmd.ProcessState.Success() {
+			Error.Printf("[!] Process has terminated with error code %d\n", cmd.ProcessState.ExitCode())
+			if must {
+				return false, ErrAborted
+			}
+			return false, nil
+		}
+	}
+
+	if verbose {
+		Ok.Println("[+] Process has exited successfully")
+	}
+
+	return true, nil
 }

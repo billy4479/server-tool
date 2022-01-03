@@ -1,9 +1,6 @@
 package main
 
 import (
-	"os"
-	"os/exec"
-	"path"
 	"path/filepath"
 )
 
@@ -37,50 +34,6 @@ func ensureJavaPretty(s *Server) (string, error) {
 	return javaExe, nil
 }
 
-func runCmdPretty(verbose bool, workDir string, name string, args ...string) (bool, error) {
-	{
-		cmdLine := name
-		if filepath.IsAbs(name) {
-			_, cmdLine = path.Split(name)
-		}
-
-		for _, arg := range args {
-			cmdLine += " " + arg
-		}
-
-		Info.Printf("[+] Running \"%s\"\n", cmdLine)
-	}
-	cmd := exec.Command(name, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stdout
-	cmd.Stdin = os.Stdin
-	cmd.Dir = workDir
-
-	if verbose {
-		Info.Println("[+] Start of command output")
-	}
-	err := cmd.Run()
-	if verbose {
-		Info.Println("[+] End of command output")
-	}
-
-	if err != nil {
-		if cmd.ProcessState == nil {
-			return false, err
-		}
-		if !cmd.ProcessState.Success() {
-			Error.Printf("[!] Process has terminated with error code %d\n", cmd.ProcessState.ExitCode())
-			return false, nil
-		}
-	}
-
-	if verbose {
-		Ok.Println("[+] Process has exited successfully")
-	}
-
-	return true, nil
-}
-
 func runDefaultJar(s *Server) (bool, error) {
 	javaExe, err := ensureJavaPretty(s)
 	if err != nil {
@@ -101,7 +54,7 @@ func runDefaultJar(s *Server) (bool, error) {
 		return false, err
 	}
 
-	return runCmdPretty(true, s.BaseDir, java, args...)
+	return runCmdPretty(true, false, s.BaseDir, java, args...)
 }
 
 func setStartFn(s *Server) {
@@ -127,7 +80,7 @@ func setStartFn(s *Server) {
 
 						cmdLine := filepath.Join(".", StartScriptName)
 
-						_, err := runCmdPretty(true, s.BaseDir, cmdLine)
+						_, err := runCmdPretty(true, false, s.BaseDir, cmdLine)
 						return err
 					},
 				},
