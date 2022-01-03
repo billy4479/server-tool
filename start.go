@@ -61,7 +61,7 @@ func setStartFn(s *Server) {
 	s.Start = func() error {
 
 		if s.HasStartScript {
-			Info.Printf("[@] \"%s\" has a startup script!\n", s.Name)
+			Info.Printf("[?] \"%s\" has a startup script!\n", s.Name)
 			opt, err := makeMenu(false,
 				Option{
 					Description: "Run the script",
@@ -112,7 +112,7 @@ func setStartFn(s *Server) {
 
 		if s.HasGit {
 			if !success {
-				Warn.Println("[@] The server terminated with an error. Update Git anyways?")
+				Warn.Println("[?] The server terminated with an error. Update Git anyways?")
 				opt, err := makeMenu(false,
 					Option{
 						Description: "Yes, update git anyways",

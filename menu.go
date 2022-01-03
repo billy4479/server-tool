@@ -35,9 +35,9 @@ func makeMenu(noDefault bool, options ...Option) (*Option, error) {
 			}
 		}
 		if noDefault {
-			Info.Printf("[@] Your option [1-%d]: ", len(options))
+			Info.Printf("[?] Your option [1-%d]: ", len(options))
 		} else {
-			Info.Printf("[@] Your option [0-%d] (default: 0): ", len(options)-1)
+			Info.Printf("[?] Your option [0-%d] (default: 0): ", len(options)-1)
 		}
 		input := ""
 		fmt.Scanln(&input)

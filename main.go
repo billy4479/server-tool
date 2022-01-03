@@ -22,7 +22,7 @@ func main() {
 	}
 
 	if err := populateDataDirs(); err != nil {
-		Error.Println("Data directories cannot be accessed or were not found!")
+		Error.Println("[!] Data directories cannot be accessed or were not found!")
 		fmt.Println(err)
 		os.Exit(1)
 		return
@@ -33,7 +33,14 @@ func main() {
 		Info.Printf("[+] Using %s as work directory\n", baseDir)
 	}
 
-	Ok.Println("[@] What do we do?")
+	gitVersion, err := detectGit()
+	if err != nil {
+		Warn.Println("[!] Git not detected!")
+	} else {
+		Info.Printf("[+] Found Git %s", gitVersion)
+	}
+
+	Ok.Println("[?] What do we do?")
 	c, err := makeMenu(false,
 		Option{
 			Description: "Start a server",
@@ -43,7 +50,7 @@ func main() {
 					return err
 				}
 
-				Info.Println("[@] The following servers have been found:")
+				Info.Println("[?] The following servers have been found:")
 				c, err := makeMenu(true, makeServersMenuItem(servers)...)
 				if err != nil {
 					return err
@@ -61,11 +68,11 @@ func main() {
 		},
 	)
 	if err != nil {
-		Error.Println(err)
+		Error.Printf("[!] %s\n", err.Error())
 		os.Exit(1)
 	}
 	if err = c.Action(); err != nil {
-		Error.Println(err)
+		Error.Printf("[!] %s\n", err.Error())
 		os.Exit(1)
 	}
 }

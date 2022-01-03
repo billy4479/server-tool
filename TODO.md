@@ -6,3 +6,4 @@
 - [ ] CI/CD
 - [ ] OTA updates
 - [ ] Download just the JRE not the whole JDK
+- [X] Git detection and setup

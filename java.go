@@ -50,7 +50,7 @@ func ensureJavaIsInstalled(javaVersion int) (string, error) {
 	Warn.Printf("[!] Java %d not found! Downloading it now...\n", javaVersion)
 	err = installJava(javaVersion)
 	if err != nil {
-		Error.Printf("An error occurred while downloading Java version %d\n", javaVersion)
+		Error.Printf("[!] An error occurred while downloading Java version %d\n", javaVersion)
 		fmt.Println(err)
 		return "", err
 	}
