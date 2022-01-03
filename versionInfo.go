@@ -40,11 +40,9 @@ const (
 	expireTime         = 24 * time.Hour
 )
 
-var (
-	manifestDir     = filepath.Join(getWorkDir(), ".server-tool", "manifest")
-	versionManifest = filepath.Join(manifestDir, "version_manifest.json")
-	versionInfos    = filepath.Join(manifestDir, "version_infos.json")
-)
+func manifestDir() string     { return filepath.Join(cacheDir, "manifest") }
+func versionManifest() string { return filepath.Join(manifestDir(), "version_manifest.json") }
+func versionInfos() string    { return filepath.Join(manifestDir(), "version_infos.json") }
 
 func updateVersionInfos() ([]VersionInfo, error) {
 	res, err := http.Get(versionManifestURL)
@@ -53,7 +51,7 @@ func updateVersionInfos() ([]VersionInfo, error) {
 	}
 	defer res.Body.Close()
 
-	manifestFile, err := os.Create(versionManifest)
+	manifestFile, err := os.Create(versionManifest())
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +136,7 @@ func updateVersionInfos() ([]VersionInfo, error) {
 			infos.data = append(infos.data, info)
 			infos.Unlock()
 
-			fmt.Printf("    [+] %s\n", id)
+			fmt.Printf("    [+] %s                   \r", id)
 		}()
 	}
 
@@ -147,7 +145,7 @@ func updateVersionInfos() ([]VersionInfo, error) {
 		return nil, infos.err
 	}
 
-	infosFile, err := os.Create(versionInfos)
+	infosFile, err := os.Create(versionInfos())
 	if err != nil {
 		return nil, err
 	}
@@ -158,23 +156,24 @@ func updateVersionInfos() ([]VersionInfo, error) {
 		return nil, err
 	}
 
-	Ok.Println("[+] Done")
+	// TODO: Find a better way...
+	Ok.Println("[+] Done                      ")
 
 	return infos.data, nil
 }
 
 func getVersionInfos() ([]VersionInfo, error) {
-	err := os.MkdirAll(manifestDir, 0700)
+	err := os.MkdirAll(manifestDir(), 0700)
 	if err != nil {
 		return nil, err
 	}
-	manifestStat, err := os.Stat(versionManifest)
+	manifestStat, err := os.Stat(versionManifest())
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			Info.Println("[+] Version manifests are missing. Dowloading them again...")
 			return updateVersionInfos()
 		}
-		Error.Printf("[!] Cannot stat %s", versionManifest)
+		Error.Printf("[!] Cannot stat %s", versionManifest())
 		return nil, err
 	}
 
@@ -183,7 +182,7 @@ func getVersionInfos() ([]VersionInfo, error) {
 		return updateVersionInfos()
 	}
 
-	infoFile, err := os.Open(versionInfos)
+	infoFile, err := os.Open(versionInfos())
 	if err != nil {
 		return nil, err
 	}

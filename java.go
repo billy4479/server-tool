@@ -23,23 +23,21 @@ func javaExeName() string {
 	return "java"
 }
 
-var (
-	javaDir     = path.Join(getWorkDir(), ".server-tool", "java")
-	javaExePath = path.Join("bin", javaExeName())
+const adoptiumApiUrl = "https://api.adoptium.net/v3/assets/latest/%d/hotspot?release=latest&jvm_impl=hotspot&vendor=adoptium"
 
-	adoptiumApiUrl = "https://api.adoptium.net/v3/assets/latest/%d/hotspot?release=latest&jvm_impl=hotspot&vendor=adoptium"
-)
+func javaDir() string     { return path.Join(cacheDir, "java") }
+func javaExePath() string { return path.Join("bin", javaExeName()) }
 
 func ensureJavaIsInstalled(javaVersion int) (string, error) {
 	javaVersionString := fmt.Sprint(javaVersion)
-	err := os.MkdirAll(javaDir, 0700)
+	err := os.MkdirAll(javaDir(), 0700)
 	if err != nil {
 		return "", nil
 	}
 
-	fullExePath := path.Join(javaDir, javaVersionString, javaExePath)
+	fullExePath := path.Join(javaDir(), javaVersionString, javaExePath())
 
-	entries, err := os.ReadDir(javaDir)
+	entries, err := os.ReadDir(javaDir())
 	if err != nil {
 		return "", nil
 	}
@@ -76,13 +74,13 @@ func installJava(javaVersion int) error {
 
 	url := ""
 	name := ""
+	relName := ""
 	var size uint64 = 0
 	var checksum []byte = nil
 
 	for _, openjdk := range j.Children() {
 		binary := openjdk.Search("binary")
 
-		// if binary.Search("os").Data().(string) == runtime.GOOS &&
 		if binary.Search("os").Data().(string) == runtime.GOOS &&
 			binary.Search("architecture").Data().(string) == "x64" &&
 			binary.Search("image_type").Data().(string) == "jdk" {
@@ -91,6 +89,7 @@ func installJava(javaVersion int) error {
 			url = pack.Search("link").Data().(string)
 			name = pack.Search("name").Data().(string)
 			size = uint64(pack.Search("size").Data().(float64))
+			relName = openjdk.Search("release_name").Data().(string)
 			checksum, err = hex.DecodeString(pack.Search("checksum").Data().(string))
 			if err != nil {
 				return err
@@ -100,7 +99,7 @@ func installJava(javaVersion int) error {
 		}
 	}
 
-	if url == "" || name == "" || checksum == nil {
+	if url == "" || name == "" || checksum == nil || relName == "" {
 		return errors.New("Unable to find needed variables in JSON response")
 	}
 
@@ -155,14 +154,14 @@ func installJava(javaVersion int) error {
 		}
 	}
 
-	dest := path.Join(javaDir, fmt.Sprint(javaVersion))
+	dest := path.Join(javaDir(), fmt.Sprint(javaVersion))
 
 	Info.Printf("[+] Extracting %s\n", name)
 	// Windows uses .zip, the rest .tar.gz
 	if runtime.GOOS == "windows" {
-		err = unzip(tmp, res.ContentLength, dest)
+		err = unzip(tmp, res.ContentLength, dest, relName)
 	} else {
-		err = untargz(tmp, dest)
+		err = untargz(tmp, dest, relName)
 	}
 
 	return err

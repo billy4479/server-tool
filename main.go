@@ -21,6 +21,13 @@ func main() {
 		return
 	}
 
+	if err := populateDataDirs(); err != nil {
+		Error.Println("Data directories cannot be accessed or were not found!")
+		fmt.Println(err)
+		os.Exit(1)
+		return
+	}
+
 	baseDir := os.Getenv("BASE_DIR")
 	if baseDir != "" {
 		Info.Printf("[+] Using %s as work directory\n", baseDir)

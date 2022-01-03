@@ -3,7 +3,35 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 )
+
+var (
+	cacheDir  string
+	configDir string
+)
+
+func populateDataDirs() (err error) {
+	cacheDir, err = os.UserCacheDir()
+	if err != nil {
+		return err
+	}
+	cacheDir = filepath.Join(cacheDir, "server-tool")
+	if err = os.MkdirAll(cacheDir, 0700); err != nil {
+		return err
+	}
+
+	configDir, err = os.UserConfigDir()
+	if err != nil {
+		return err
+	}
+	configDir = filepath.Join(configDir, "server-tool")
+	if err = os.MkdirAll(configDir, 0700); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func getWorkDir() string {
 	baseDir := os.Getenv("BASE_DIR")

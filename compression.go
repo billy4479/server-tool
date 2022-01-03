@@ -24,7 +24,7 @@ func checkIllegalPath(dest, name string) error {
 }
 
 // Thanks to https://golangcode.com/unzip-files-in-go/
-func unzip(input io.ReaderAt, size int64, dest string) error {
+func unzip(input io.ReaderAt, size int64, dest string, skipName string) error {
 	r, err := zip.NewReader(input, size)
 	if err != nil {
 		return err
@@ -33,14 +33,11 @@ func unzip(input io.ReaderAt, size int64, dest string) error {
 	basename := ""
 	for _, f := range r.File {
 
-		if f.FileInfo().IsDir() &&
-			strings.HasPrefix(f.Name, "jdk-") &&
-			basename == "" {
-
+		if basename == "" &&
+			strings.TrimRight(f.Name, "/") == skipName {
 			basename = f.Name
 		}
 
-		// https://snyk.io/research/zip-slip-vulnerability#go
 		destPath := filepath.Join(dest, strings.TrimPrefix(f.Name, basename))
 		if err = checkIllegalPath(dest, f.Name); err != nil {
 			return err
@@ -81,7 +78,7 @@ func unzip(input io.ReaderAt, size int64, dest string) error {
 }
 
 // Thanks to https://stackoverflow.com/questions/28249782/is-it-possible-to-extract-a-tar-xz-package-in-golang
-func untargz(input io.Reader, dest string) error {
+func untargz(input io.Reader, dest string, skipName string) error {
 
 	// Create an gz Reader
 	r, err := gzip.NewReader(input)
@@ -102,11 +99,8 @@ func untargz(input io.Reader, dest string) error {
 			return err
 		}
 
-		if header.Typeflag == tar.TypeDir &&
-			strings.Count(header.Name, "/") == 1 &&
-			strings.HasPrefix(header.Name, "jdk-") &&
-			basename == "" {
-
+		if basename == "" &&
+			strings.TrimRight(header.Name, "/") == skipName {
 			basename = header.Name
 		}
 
