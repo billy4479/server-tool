@@ -14,11 +14,11 @@ func getWorkDir() string {
 	return "."
 }
 
-func makeServersMenuItem(servers []Server) []option {
-	result := []option{}
+func makeServersMenuItem(servers []Server) []Option {
+	result := []Option{}
 
 	for _, s := range servers {
-		desc := fmt.Sprintf("%s (", s.Name)
+		desc := fmt.Sprintf("\"%s\" (", s.Name)
 		if s.Version == nil {
 			desc += "?? on ??"
 		} else {
@@ -44,7 +44,7 @@ func makeServersMenuItem(servers []Server) []option {
 
 		desc += ")"
 
-		result = append(result, option{
+		result = append(result, Option{
 			Description: desc,
 			Action:      s.Start,
 		})

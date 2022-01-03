@@ -16,12 +16,20 @@ const (
 
 type Server struct {
 	Name           string
+	BaseDir        string
 	Version        *VersionInfo
 	Type           ServerType
 	HasGit         bool
 	HasStartScript bool
 	Start          func() error
 }
+
+const (
+	StartScriptName  = "start.sh"
+	FabricJarName    = "fabric-server-launch.jar"
+	VanillaJarName   = "server.jar"
+	GitDirectoryName = ".git"
+)
 
 func findServers() ([]Server, error) {
 	serverDirs, err := os.ReadDir(getWorkDir())
@@ -37,19 +45,19 @@ func findServers() ([]Server, error) {
 			continue
 		}
 
-		serverDir := filepath.Join(getWorkDir(), e.Name())
+		var s Server
+		s.BaseDir = filepath.Join(getWorkDir(), e.Name())
 
-		entries, err := os.ReadDir(serverDir)
+		entries, err := os.ReadDir(s.BaseDir)
 		if err != nil {
 			return nil, err
 		}
 
-		var s Server
 		s.Type = Vanilla
 		for _, entry := range entries {
 			if !entry.IsDir() {
-				if entry.Name() == "server.jar" {
-					possibleServerJar := filepath.Join(serverDir, entry.Name())
+				if entry.Name() == VanillaJarName {
+					possibleServerJar := filepath.Join(s.BaseDir, entry.Name())
 					err = detectServerVersion(possibleServerJar, &s)
 					if err != nil {
 						return nil, err
@@ -59,13 +67,13 @@ func findServers() ([]Server, error) {
 						// server.jar is not a Minecraft server
 						break
 					}
-				} else if entry.Name() == "fabric-server-launch.jar" {
+				} else if entry.Name() == FabricJarName {
 					s.Type = Fabric
-				} else if entry.Name() == "start.sh" {
+				} else if entry.Name() == StartScriptName {
 					s.HasStartScript = true
 				}
 			} else {
-				if entry.Name() == ".git" {
+				if entry.Name() == GitDirectoryName {
 					s.HasGit = true
 				}
 			}
@@ -75,20 +83,7 @@ func findServers() ([]Server, error) {
 		}
 
 		s.Name = e.Name()
-		s.Start = func() error {
-			if s.Version != nil {
-				Info.Printf("[+] %s requires Java %d\n", s.Name, s.Version.JavaVersion)
-				javaExe, err := ensureJavaIsInstalled(s.Version.JavaVersion)
-				if err != nil {
-					return err
-				}
-				Ok.Printf("[+] Java executable: %s\n", javaExe)
-			} else {
-				Info.Printf("[+] %s has a startup script!\n", s.Name)
-			}
-
-			return nil
-		}
+		setStartFn(&s)
 
 		servers = append(servers, s)
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/fatih/color"
 )
 
-type option struct {
+type Option struct {
 	Description string
 	Action      func() error
 	PrintFn     func(position int, noDefault bool)
@@ -16,7 +16,7 @@ type option struct {
 
 var ErrNotEnoughoptions = errors.New("At least one option is required")
 
-func makeoptionMenu(noDefault bool, options ...option) (*option, error) {
+func makeMenu(noDefault bool, options ...Option) (*Option, error) {
 	if len(options) == 0 {
 		return nil, ErrNotEnoughoptions
 	}
@@ -35,9 +35,9 @@ func makeoptionMenu(noDefault bool, options ...option) (*option, error) {
 			}
 		}
 		if noDefault {
-			Info.Printf("Your option [1-%d]: ", len(options))
+			Info.Printf("[@] Your option [1-%d]: ", len(options))
 		} else {
-			Info.Printf("Your option [0-%d] (default: 0): ", len(options)-1)
+			Info.Printf("[@] Your option [0-%d] (default: 0): ", len(options)-1)
 		}
 		input := ""
 		fmt.Scanln(&input)
@@ -49,20 +49,20 @@ func makeoptionMenu(noDefault bool, options ...option) (*option, error) {
 
 			if n >= len(options) || n < 0 {
 				if noDefault {
-					Warn.Printf("option %d was not found.\n", inputN)
+					Warn.Printf("[!] Option %d was not found.\n", inputN)
 					continue
 				}
-				Warn.Printf("option %d was not found, falling back on default.\n", inputN)
+				Warn.Printf("[!] Option %d was not found, falling back on default.\n", inputN)
 				return &options[0], nil
 			}
 
-			Ok.Printf("option %d selected.\n", inputN)
+			Ok.Printf("[+] Option %d selected.\n", inputN)
 			return &options[n], nil
 		} else if noDefault {
-			Warn.Println("Invalid option.")
+			Warn.Println("[!] Invalid option.")
 		}
 		run = noDefault
 	}
-	Ok.Printf("Default option selected.\n")
+	Ok.Printf("[+] Default option selected.\n")
 	return &options[0], nil
 }

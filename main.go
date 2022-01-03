@@ -26,8 +26,9 @@ func main() {
 		Info.Printf("[+] Using %s as work directory\n", baseDir)
 	}
 
-	c, err := makeoptionMenu(false,
-		option{
+	Ok.Println("[@] What do we do?")
+	c, err := makeMenu(false,
+		Option{
 			Description: "Start a server",
 			Action: func() error {
 				servers, err := findServers()
@@ -35,8 +36,8 @@ func main() {
 					return err
 				}
 
-				Info.Println("The following servers have been found:")
-				c, err := makeoptionMenu(true, makeServersMenuItem(servers)...)
+				Info.Println("[@] The following servers have been found:")
+				c, err := makeMenu(true, makeServersMenuItem(servers)...)
 				if err != nil {
 					return err
 				}
@@ -44,7 +45,7 @@ func main() {
 				return c.Action()
 			},
 		},
-		option{
+		Option{
 			Description: "Create new a server",
 			Action: func() error {
 				Error.Println("[!] TODO")
