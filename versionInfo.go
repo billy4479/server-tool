@@ -151,7 +151,9 @@ func updateVersionInfos() ([]VersionInfo, error) {
 	}
 	defer infosFile.Close()
 
-	err = json.NewEncoder(infosFile).Encode(infos.data)
+	encoder := json.NewEncoder(infosFile)
+	encoder.SetIndent("", "  ")
+	err = encoder.Encode(infos.data)
 	if err != nil {
 		return nil, err
 	}

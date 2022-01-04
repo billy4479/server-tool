@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
 	"runtime"
 
 	"github.com/fatih/color"
@@ -31,6 +32,11 @@ func main() {
 	baseDir := os.Getenv("BASE_DIR")
 	if baseDir != "" {
 		Info.Printf("[+] Using %s as work directory\n", baseDir)
+		err := os.MkdirAll(baseDir, 0755)
+		if err != nil {
+			Error.Printf("[!] %s\n", err.Error())
+			os.Exit(1)
+		}
 	}
 
 	gitVersion, err := detectGit()
@@ -62,7 +68,53 @@ func main() {
 		Option{
 			Description: "Create new a server",
 			Action: func() error {
-				Error.Println("[!] TODO")
+				versions, err := getVersionInfos()
+				if err != nil {
+					return err
+				}
+
+				s := Server{}
+				for s.Name == "" {
+					Info.Print("[?] Enter a name for the new server: ")
+					s.Name, err = readLine()
+					if err != nil {
+						return err
+					}
+
+					s.BaseDir = path.Join(getWorkDir(), s.Name)
+				}
+
+				for s.Version == nil {
+					Info.Print("[?] Enter a version for the new server (? to list all versions): ")
+					versionStr, err := readLine()
+					if err != nil {
+						return err
+					}
+
+					if versionStr == "?" {
+						for _, v := range versions {
+							fmt.Printf("[+] %s\n", v.ID)
+						}
+						continue
+					}
+
+					for _, v := range versions {
+						if v.ID == versionStr {
+							s.Version = &v
+							break
+						}
+					}
+
+					if s.Version == nil {
+						Warn.Println("[!] The chosen version was not found! Type ? for a list of the available versions")
+					}
+				}
+
+				err = createServer(&s)
+				if err != nil {
+					return err
+				}
+				Ok.Println("[+] Server created successfully!")
 				return nil
 			},
 		},

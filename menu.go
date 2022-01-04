@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 
 	"github.com/fatih/color"
@@ -39,8 +38,11 @@ func makeMenu(noDefault bool, options ...Option) (*Option, error) {
 		} else {
 			Info.Printf("[?] Your option [0-%d] (default: 0): ", len(options)-1)
 		}
-		input := ""
-		fmt.Scanln(&input)
+		input, err := readLine()
+		if err != nil {
+			return nil, err
+		}
+
 		if inputN, err := strconv.ParseInt(input, 10, 32); err == nil {
 			n := int(inputN)
 			if noDefault {

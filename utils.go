@@ -1,16 +1,20 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 var (
 	ErrAborted = errors.New("Aborted due to a failed command")
+
+	inputReader = bufio.NewReader(os.Stdin)
 
 	cacheDir  string
 	configDir string
@@ -131,4 +135,13 @@ func runCmdPretty(verbose bool, must bool, workDir string, name string, args ...
 	}
 
 	return true, nil
+}
+
+func readLine() (string, error) {
+	input, err := inputReader.ReadString('\n')
+	if err != nil {
+		return "", err
+	}
+	input = strings.ReplaceAll(input, "\n", "")
+	return input, nil
 }
