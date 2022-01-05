@@ -51,20 +51,29 @@ func makeMenu(noDefault bool, options ...Option) (*Option, error) {
 
 			if n >= len(options) || n < 0 {
 				if noDefault {
-					Warn.Printf("[!] Option %d was not found.\n", inputN)
+					if !config.Application.Quiet {
+						Warn.Printf("[!] Option %d was not found.\n", inputN)
+					}
 					continue
 				}
-				Warn.Printf("[!] Option %d was not found, falling back on default.\n", inputN)
+				if !config.Application.Quiet {
+					Warn.Printf("[!] Option %d was not found, falling back on default.\n", inputN)
+				}
 				return &options[0], nil
 			}
 
-			Ok.Printf("[+] Option %d selected.\n", inputN)
+			if !config.Application.Quiet {
+				Ok.Printf("[+] Option %d selected.\n", inputN)
+			}
 			return &options[n], nil
 		} else if noDefault {
 			Warn.Println("[!] Invalid option.")
 		}
 		run = noDefault
 	}
-	Ok.Printf("[+] Default option selected.\n")
+
+	if !config.Application.Quiet {
+		Ok.Printf("[+] Default option selected.\n")
+	}
 	return &options[0], nil
 }

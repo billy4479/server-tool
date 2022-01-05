@@ -1,5 +1,5 @@
 GO ?= go
-BASE_DIR ?= ./test-dir
+CONFIG_PATH ?= ./dev-config.yml
 
 all: build
 .PHONY: all
@@ -11,7 +11,7 @@ build:
 .PHONY: build
 
 run: build
-	BASE_DIR=$(BASE_DIR) ./build/server-tool
+	CONFIG_PATH=$(CONFIG_PATH) ./build/server-tool
 
 .PHONY: run
 

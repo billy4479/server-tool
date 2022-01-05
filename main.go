@@ -22,6 +22,18 @@ func main() {
 		return
 	}
 
+	err := loadConfig()
+	if err != nil {
+		Warn.Println("[!] An error has occurred while loading the config file. Falling back on the default...")
+		if err = writeConfig(); err != nil {
+			Error.Printf("[!] %s\n", err.Error())
+			os.Exit(1)
+
+		}
+	} else if !config.Application.Quiet {
+		Ok.Println("[+] Config loaded successfully")
+	}
+
 	if err := populateDataDirs(); err != nil {
 		Error.Println("[!] Data directories cannot be accessed or were not found!")
 		fmt.Println(err)
@@ -29,25 +41,17 @@ func main() {
 		return
 	}
 
-	baseDir := os.Getenv("BASE_DIR")
-	if baseDir != "" {
-		Info.Printf("[+] Using %s as work directory\n", baseDir)
-		err := os.MkdirAll(baseDir, 0755)
+	if !config.Git.Disable {
+		gitVersion, err := detectGit()
 		if err != nil {
-			Error.Printf("[!] %s\n", err.Error())
-			os.Exit(1)
+			Warn.Println("[!] Git not detected!")
+		} else if !config.Application.Quiet {
+			Info.Printf("[+] Found Git %s", gitVersion)
 		}
 	}
 
-	gitVersion, err := detectGit()
-	if err != nil {
-		Warn.Println("[!] Git not detected!")
-	} else {
-		Info.Printf("[+] Found Git %s", gitVersion)
-	}
-
 	Ok.Println("[?] What do we do?")
-	c, err := makeMenu(false,
+	opt, err := makeMenu(false,
 		Option{
 			Description: "Start a server",
 			Action: func() error {
@@ -81,7 +85,7 @@ func main() {
 						return err
 					}
 
-					s.BaseDir = path.Join(getWorkDir(), s.Name)
+					s.BaseDir = path.Join(config.Application.WorkingDir, s.Name)
 				}
 
 				for s.Version == nil {
@@ -123,7 +127,7 @@ func main() {
 		Error.Printf("[!] %s\n", err.Error())
 		os.Exit(1)
 	}
-	if err = c.Action(); err != nil {
+	if err = opt.Action(); err != nil {
 		Error.Printf("[!] %s\n", err.Error())
 		os.Exit(1)
 	}

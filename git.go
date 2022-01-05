@@ -115,17 +115,48 @@ func promptGitInstall() error {
 }
 
 func gitPreFn(s *Server) (err error) {
+	if config.Git.Disable {
+		return nil
+	}
+
+	if config.Git.Overrides.Enable {
+		pre := config.Git.Overrides.CustomPreCommands
+		if len(pre) > 0 {
+			for _, cmd := range pre {
+				_, err = runCmdPretty(false, true, s.BaseDir, false, cmd[0], cmd[1:]...)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}
+
 	if !hasGit {
 		err = promptGitInstall()
 		if err != nil {
 			return err
 		}
 	}
-	_, err = runCmdPretty(false, true, s.BaseDir, "git", "pull")
+	_, err = runCmdPretty(false, true, s.BaseDir, false, "git", "pull")
 	return err
 }
 
 func gitPostFn(s *Server) (err error) {
+
+	if config.Git.Overrides.Enable {
+		post := config.Git.Overrides.CustomPostCommands
+		if len(post) > 0 {
+			for _, cmd := range post {
+				_, err = runCmdPretty(false, true, s.BaseDir, false, cmd[0], cmd[1:]...)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}
+
 	if !hasGit {
 		err = promptGitInstall()
 		if err != nil {
@@ -133,16 +164,16 @@ func gitPostFn(s *Server) (err error) {
 		}
 	}
 
-	_, err = runCmdPretty(false, true, s.BaseDir, "git", "add", "-A")
+	_, err = runCmdPretty(false, true, s.BaseDir, false, "git", "add", "-A")
 	if err != nil {
 		return err
 	}
 
-	_, err = runCmdPretty(false, true, s.BaseDir, "git", "commit", "--allow-empty-message", "-m", "")
+	_, err = runCmdPretty(false, true, s.BaseDir, false, "git", "commit", "--allow-empty-message", "-m", "")
 	if err != nil {
 		return err
 	}
 
-	_, err = runCmdPretty(false, true, s.BaseDir, "git", "push")
+	_, err = runCmdPretty(false, true, s.BaseDir, false, "git", "push")
 	return err
 }

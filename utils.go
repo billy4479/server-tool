@@ -11,44 +11,27 @@ import (
 	"strings"
 )
 
+const progName = "server-tool"
+
 var (
 	ErrAborted = errors.New("Aborted due to a failed command")
 
 	inputReader = bufio.NewReader(os.Stdin)
-
-	cacheDir  string
-	configDir string
 )
 
 func populateDataDirs() (err error) {
-	cacheDir, err = os.UserCacheDir()
-	if err != nil {
-		return err
+	if config.Application.CacheDir == "" {
+		config.Application.CacheDir, err = os.UserCacheDir()
+		if err != nil {
+			return err
+		}
+		config.Application.CacheDir = filepath.Join(config.Application.CacheDir, progName)
 	}
-	cacheDir = filepath.Join(cacheDir, "server-tool")
-	if err = os.MkdirAll(cacheDir, 0700); err != nil {
-		return err
-	}
-
-	configDir, err = os.UserConfigDir()
-	if err != nil {
-		return err
-	}
-	configDir = filepath.Join(configDir, "server-tool")
-	if err = os.MkdirAll(configDir, 0700); err != nil {
+	if err = os.MkdirAll(config.Application.CacheDir, 0700); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func getWorkDir() string {
-	baseDir := os.Getenv("BASE_DIR")
-	if baseDir != "" {
-		return baseDir
-	}
-
-	return "."
 }
 
 func makeServersMenuItem(servers []Server) []Option {
@@ -65,10 +48,6 @@ func makeServersMenuItem(servers []Server) []Option {
 				desc += "Vanilla"
 			case Fabric:
 				desc += "Fabric"
-			case Forge:
-				desc += "Forge"
-			case Paper:
-				desc += "PaperMC"
 			}
 		}
 
@@ -90,7 +69,7 @@ func makeServersMenuItem(servers []Server) []Option {
 	return result
 }
 
-func runCmdPretty(verbose bool, must bool, workDir string, name string, args ...string) (bool, error) {
+func runCmdPretty(verbose bool, must bool, workDir string, noOutput bool, name string, args ...string) (bool, error) {
 	{
 		cmdLine := name
 		if filepath.IsAbs(name) {
@@ -104,8 +83,10 @@ func runCmdPretty(verbose bool, must bool, workDir string, name string, args ...
 		Info.Printf("[+] Running \"%s\"\n", cmdLine)
 	}
 	cmd := exec.Command(name, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stdout
+	if !noOutput {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stdout
+	}
 	cmd.Stdin = os.Stdin
 	cmd.Dir = workDir
 

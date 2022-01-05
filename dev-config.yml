@@ -1,0 +1,26 @@
+application:
+  quiet: false
+  workingdir: "./test-dir"
+  cachedir: ""
+minecraft:
+  quiet: false
+  nogui: true
+  noeula: false
+java:
+  executableoverride: ""
+  memory:
+    amount: 6
+    gigabytes: true
+  flags:
+    extraflags: []
+    overridedefault: false
+git:
+  disable: false
+  disablegithubintegration: false
+  overrides:
+    enable: false
+    customprecommands: []
+    custompostcommands: []
+startscript:
+  name: ""
+  disable: false

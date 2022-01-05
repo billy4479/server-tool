@@ -33,20 +33,25 @@ func createServer(s *Server) error {
 		return err
 	}
 
-	Ok.Println("[+] Done!")
-	Info.Println("[+] Accepting the EULA...")
-
-	eula, err := os.Create(filepath.Join(s.BaseDir, "eula.txt"))
-	if err != nil {
-		return err
+	if !config.Application.Quiet {
+		Ok.Println("[+] Done!")
 	}
-	defer eula.Close()
-	_, err = eula.Write([]byte(eulaContent))
-	if err != nil {
-		return err
+	if !config.Minecraft.NoEULA {
+		Info.Println("[+] Accepting the EULA...")
+
+		eula, err := os.Create(filepath.Join(s.BaseDir, "eula.txt"))
+		if err != nil {
+			return err
+		}
+		defer eula.Close()
+		_, err = eula.Write([]byte(eulaContent))
+		if err != nil {
+			return err
+		}
+
+		if !config.Application.Quiet {
+			Ok.Println("[+] Done!")
+		}
 	}
-
-	Ok.Println("[+] Done")
-
 	return nil
 }

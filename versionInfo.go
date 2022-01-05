@@ -40,7 +40,7 @@ const (
 	expireTime         = 24 * time.Hour
 )
 
-func manifestDir() string     { return filepath.Join(cacheDir, "manifest") }
+func manifestDir() string     { return filepath.Join(config.Application.CacheDir, "manifest") }
 func versionManifest() string { return filepath.Join(manifestDir(), "version_manifest.json") }
 func versionInfos() string    { return filepath.Join(manifestDir(), "version_infos.json") }
 
@@ -136,7 +136,9 @@ func updateVersionInfos() ([]VersionInfo, error) {
 			infos.data = append(infos.data, info)
 			infos.Unlock()
 
-			fmt.Printf("    [+] %s                   \r", id)
+			if !config.Application.Quiet {
+				fmt.Printf("    [+] %s                   \r", id)
+			}
 		}()
 	}
 
@@ -158,8 +160,10 @@ func updateVersionInfos() ([]VersionInfo, error) {
 		return nil, err
 	}
 
-	// TODO: Find a better way...
-	Ok.Println("[+] Done                      ")
+	if !config.Application.Quiet {
+		// TODO: Find a better way...
+		Ok.Println("[+] Done                      ")
+	}
 
 	return infos.data, nil
 }
@@ -172,7 +176,12 @@ func getVersionInfos() ([]VersionInfo, error) {
 	manifestStat, err := os.Stat(versionManifest())
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			Info.Println("[+] Version manifests are missing. Dowloading them again...")
+			if config.Application.Quiet {
+				Info.Println("[+] Updating manifests")
+			} else {
+				Info.Println("[+] Version manifests are missing. Dowloading them again...")
+			}
+
 			return updateVersionInfos()
 		}
 		Error.Printf("[!] Cannot stat %s", versionManifest())
@@ -180,7 +189,11 @@ func getVersionInfos() ([]VersionInfo, error) {
 	}
 
 	if manifestStat.ModTime().Add(expireTime).Before(time.Now()) {
-		Info.Println("[+] Version manifests are expired. Dowloading them again...")
+		if config.Application.Quiet {
+			Info.Println("[+] Updating manifests")
+		} else {
+			Info.Println("[+] Version manifests are expired. Dowloading them again...")
+		}
 		return updateVersionInfos()
 	}
 

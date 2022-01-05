@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 )
@@ -10,8 +11,6 @@ type ServerType uint8
 const (
 	Vanilla ServerType = iota
 	Fabric
-	Forge
-	Paper
 )
 
 type Server struct {
@@ -25,14 +24,13 @@ type Server struct {
 }
 
 const (
-	StartScriptName  = "start.sh"
 	FabricJarName    = "fabric-server-launch.jar"
 	VanillaJarName   = "server.jar"
 	GitDirectoryName = ".git"
 )
 
 func findServers() ([]Server, error) {
-	serverDirs, err := os.ReadDir(getWorkDir())
+	serverDirs, err := os.ReadDir(config.Application.WorkingDir)
 	if err != nil {
 		return nil, err
 	}
@@ -40,13 +38,12 @@ func findServers() ([]Server, error) {
 	servers := []Server{}
 
 	for _, e := range serverDirs {
-		if !e.IsDir() ||
-			e.Name() == ".server-tools" {
+		var s Server
+		s.BaseDir = filepath.Join(config.Application.WorkingDir, e.Name())
+
+		if !e.IsDir() {
 			continue
 		}
-
-		var s Server
-		s.BaseDir = filepath.Join(getWorkDir(), e.Name())
 
 		entries, err := os.ReadDir(s.BaseDir)
 		if err != nil {
@@ -69,12 +66,12 @@ func findServers() ([]Server, error) {
 					}
 				} else if entry.Name() == FabricJarName {
 					s.Type = Fabric
-				} else if entry.Name() == StartScriptName {
-					s.HasStartScript = true
+				} else if entry.Name() == config.StartScript.Name {
+					s.HasStartScript = !config.StartScript.Disable
 				}
 			} else {
 				if entry.Name() == GitDirectoryName {
-					s.HasGit = true
+					s.HasGit = !config.Git.Disable
 				}
 			}
 		}
@@ -86,6 +83,10 @@ func findServers() ([]Server, error) {
 		setStartFn(&s)
 
 		servers = append(servers, s)
+	}
+
+	if len(servers) == 0 {
+		return servers, errors.New("No server were found!")
 	}
 
 	return servers, nil

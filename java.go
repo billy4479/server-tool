@@ -25,7 +25,7 @@ func javaExeName() string {
 
 const adoptiumApiUrl = "https://api.adoptium.net/v3/assets/latest/%d/hotspot?release=latest&jvm_impl=hotspot&vendor=adoptium"
 
-func javaDir() string     { return path.Join(cacheDir, "java") }
+func javaDir() string     { return path.Join(config.Application.CacheDir, "java") }
 func javaExePath() string { return path.Join("bin", javaExeName()) }
 
 func ensureJavaIsInstalled(javaVersion int) (string, error) {
@@ -55,7 +55,9 @@ func ensureJavaIsInstalled(javaVersion int) (string, error) {
 		return "", err
 	}
 
-	Ok.Println("[+] Done")
+	if !config.Application.Quiet {
+		Ok.Println("[+] Done!")
+	}
 
 	return fullExePath, nil
 }
