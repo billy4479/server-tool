@@ -15,6 +15,10 @@ just double click on the program and enjoy!
 
 For a more advanced use see [Configuring](#configuring) below.
 
+## Demo
+
+[![asciicast](https://asciinema.org/a/459894.svg)](https://asciinema.org/a/459894)
+
 ## Configuring
 
 This tool uses a file called `server-tool.yml`
