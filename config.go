@@ -39,8 +39,8 @@ type Config struct {
 		}
 	}
 	StartScript struct {
-		Name    string
 		Disable bool
+		Name    string
 	}
 }
 

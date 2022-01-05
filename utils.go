@@ -103,7 +103,6 @@ func runCmdPretty(verbose bool, must bool, workDir string, noOutput bool, name s
 			return false, err
 		}
 		if !cmd.ProcessState.Success() {
-			Error.Printf("[!] Process has terminated with error code %d\n", cmd.ProcessState.ExitCode())
 			if must {
 				return false, ErrAborted
 			}
