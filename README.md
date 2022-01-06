@@ -19,6 +19,12 @@ For a more advanced use see [Configuring](#configuring) below.
 
 [![asciicast](https://asciinema.org/a/459894.svg)](https://asciinema.org/a/459894)
 
+## Where to download
+
+There are no releases yet, but you can get a build from [Github Actions](https://github.com/billy4479/server-tool/actions).
+The UI is a bit ugly: you have to click on the top one then scroll down to the artifacts section.
+You'll find a Linux and a Windows executable there.
+
 ## Configuring
 
 This tool uses a file called `server-tool.yml`
