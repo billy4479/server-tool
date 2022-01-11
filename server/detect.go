@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"crypto/sha1"
@@ -6,10 +6,12 @@ import (
 	"errors"
 	"io"
 	"os"
+
+	"github.com/billy4479/server-tool/manifest"
 )
 
 func detectServerVersion(serverJarPath string, s *Server) error {
-	infos, err := getVersionInfos()
+	infos, err := manifest.GetVersionInfos()
 	if err != nil {
 		return err
 	}

@@ -1,9 +1,11 @@
-package main
+package tui
 
 import (
 	"errors"
 	"strconv"
 
+	"github.com/billy4479/server-tool/config"
+	"github.com/billy4479/server-tool/logger"
 	"github.com/fatih/color"
 )
 
@@ -15,7 +17,7 @@ type Option struct {
 
 var ErrNotEnoughoptions = errors.New("At least one option is required")
 
-func makeMenu(noDefault bool, options ...Option) (*Option, error) {
+func MakeMenu(noDefault bool, options ...Option) (*Option, error) {
 	if len(options) == 0 {
 		return nil, ErrNotEnoughoptions
 	}
@@ -34,11 +36,11 @@ func makeMenu(noDefault bool, options ...Option) (*Option, error) {
 			}
 		}
 		if noDefault {
-			Info.Printf("[?] Your option [1-%d]: ", len(options))
+			logger.L.Info.Printf("[?] Your option [1-%d]: ", len(options))
 		} else {
-			Info.Printf("[?] Your option [0-%d] (default: 0): ", len(options)-1)
+			logger.L.Info.Printf("[?] Your option [0-%d] (default: 0): ", len(options)-1)
 		}
-		input, err := readLine()
+		input, err := ReadLine()
 		if err != nil {
 			return nil, err
 		}
@@ -51,29 +53,29 @@ func makeMenu(noDefault bool, options ...Option) (*Option, error) {
 
 			if n >= len(options) || n < 0 {
 				if noDefault {
-					if !config.Application.Quiet {
-						Warn.Printf("[!] Option %d was not found.\n", inputN)
+					if !config.C.Application.Quiet {
+						logger.L.Warn.Printf("[!] Option %d was not found.\n", inputN)
 					}
 					continue
 				}
-				if !config.Application.Quiet {
-					Warn.Printf("[!] Option %d was not found, falling back on default.\n", inputN)
+				if !config.C.Application.Quiet {
+					logger.L.Warn.Printf("[!] Option %d was not found, falling back on default.\n", inputN)
 				}
 				return &options[0], nil
 			}
 
-			if !config.Application.Quiet {
-				Ok.Printf("[+] Option %d selected.\n", inputN)
+			if !config.C.Application.Quiet {
+				logger.L.Ok.Printf("[+] Option %d selected.\n", inputN)
 			}
 			return &options[n], nil
 		} else if noDefault {
-			Warn.Println("[!] Invalid option.")
+			logger.L.Warn.Println("[!] Invalid option.")
 		}
 		run = noDefault
 	}
 
-	if !config.Application.Quiet {
-		Ok.Printf("[+] Default option selected.\n")
+	if !config.C.Application.Quiet {
+		logger.L.Ok.Printf("[+] Default option selected.\n")
 	}
 	return &options[0], nil
 }

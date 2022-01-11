@@ -1,21 +1,24 @@
-package main
+package server
 
 import (
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/billy4479/server-tool/config"
+	"github.com/billy4479/server-tool/logger"
 )
 
 const eulaContent = "eula=true"
 
-func createServer(s *Server) error {
+func CreateServer(s *Server) error {
 	err := os.MkdirAll(s.BaseDir, 0755)
 	if err != nil {
 		return err
 	}
 
-	Info.Printf("[+] Downloading jar for version %s\n", s.Version.ID)
+	logger.L.Info.Printf("[+] Downloading jar for version %s\n", s.Version.ID)
 	jar, err := os.Create(filepath.Join(s.BaseDir, "server.jar"))
 	if err != nil {
 		return err
@@ -33,11 +36,11 @@ func createServer(s *Server) error {
 		return err
 	}
 
-	if !config.Application.Quiet {
-		Ok.Println("[+] Done!")
+	if !config.C.Application.Quiet {
+		logger.L.Ok.Println("[+] Done!")
 	}
-	if !config.Minecraft.NoEULA {
-		Info.Println("[+] Accepting the EULA...")
+	if !config.C.Minecraft.NoEULA {
+		logger.L.Info.Println("[+] Accepting the EULA...")
 
 		eula, err := os.Create(filepath.Join(s.BaseDir, "eula.txt"))
 		if err != nil {
@@ -49,8 +52,8 @@ func createServer(s *Server) error {
 			return err
 		}
 
-		if !config.Application.Quiet {
-			Ok.Println("[+] Done!")
+		if !config.C.Application.Quiet {
+			logger.L.Ok.Println("[+] Done!")
 		}
 	}
 	return nil

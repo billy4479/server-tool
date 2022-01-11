@@ -1,8 +1,15 @@
-package main
+package server
 
 import (
 	"fmt"
 	"path/filepath"
+
+	"github.com/billy4479/server-tool/config"
+	"github.com/billy4479/server-tool/git"
+	"github.com/billy4479/server-tool/java"
+	"github.com/billy4479/server-tool/logger"
+	"github.com/billy4479/server-tool/tui"
+	"github.com/billy4479/server-tool/utils"
 )
 
 const (
@@ -29,22 +36,22 @@ var (
 )
 
 func ensureJavaPretty(s *Server) (string, error) {
-	if !config.Application.Quiet {
-		Info.Printf("[+] \"%s\" requires Java %d\n", s.Name, s.Version.JavaVersion)
+	if !config.C.Application.Quiet {
+		logger.L.Info.Printf("[+] \"%s\" requires Java %d\n", s.Name, s.Version.JavaVersion)
 	}
-	javaExe, err := ensureJavaIsInstalled(s.Version.JavaVersion)
+	javaExe, err := java.EnsureJavaIsInstalled(s.Version.JavaVersion)
 	if err != nil {
 		return "", err
 	}
-	if !config.Application.Quiet {
-		Ok.Printf("[+] Java was found at \"%s\"\n", javaExe)
+	if !config.C.Application.Quiet {
+		logger.L.Ok.Printf("[+] Java was found at \"%s\"\n", javaExe)
 	}
 	return javaExe, nil
 }
 
 func runJar(s *Server) (bool, error) {
 	var err error
-	javaExe := config.Java.ExecutableOverride
+	javaExe := config.C.Java.ExecutableOverride
 	if javaExe == "" {
 		javaExe, err = ensureJavaPretty(s)
 		if err != nil {
@@ -53,20 +60,20 @@ func runJar(s *Server) (bool, error) {
 	}
 
 	letter := func() string {
-		if config.Java.Memory.Gigabytes {
+		if config.C.Java.Memory.Gigabytes {
 			return "G"
 		} else {
 			return "M"
 		}
 	}
 	args := []string{
-		fmt.Sprintf(minMemFlag, config.Java.Memory.Amount, letter()),
-		fmt.Sprintf(maxMemFlag, config.Java.Memory.Amount, letter()),
+		fmt.Sprintf(minMemFlag, config.C.Java.Memory.Amount, letter()),
+		fmt.Sprintf(maxMemFlag, config.C.Java.Memory.Amount, letter()),
 	}
-	if !config.Java.Flags.OverrideDefault {
+	if !config.C.Java.Flags.OverrideDefault {
 		args = append(args, javaArgs...)
 	}
-	args = append(args, config.Java.Flags.ExtraFlags...)
+	args = append(args, config.C.Java.Flags.ExtraFlags...)
 
 	if s.Type == Vanilla {
 		args = append(args, VanillaJarName)
@@ -76,7 +83,7 @@ func runJar(s *Server) (bool, error) {
 		panic("HOW DID YOU DO THIS?")
 	}
 
-	if config.Minecraft.NoGUI {
+	if config.C.Minecraft.NoGUI {
 		args = append(args, noGuiFlag)
 	}
 
@@ -85,7 +92,14 @@ func runJar(s *Server) (bool, error) {
 		return false, err
 	}
 
-	return runCmdPretty(!config.Application.Quiet, false, s.BaseDir, config.Minecraft.Quiet, java, args...)
+	return utils.RunCmdPretty(
+		!config.C.Application.Quiet,
+		false,
+		s.BaseDir,
+		config.C.Minecraft.Quiet,
+		java,
+		args...,
+	)
 }
 
 func runScript(s *Server) error {
@@ -93,39 +107,39 @@ func runScript(s *Server) error {
 		if _, err := ensureJavaPretty(s); err != nil {
 			return err
 		}
-	} else if !config.Application.Quiet {
-		Warn.Println("[!] server.jar not found! Running the script blindly...")
+	} else if !config.C.Application.Quiet {
+		logger.L.Warn.Println("[!] server.jar not found! Running the script blindly...")
 	}
 
-	if s.HasGit && !config.Application.Quiet {
-		Info.Printf("[+] \"%s\" supports Git but has a startup script: ignoring Git\n", s.Name)
+	if s.HasGit && !config.C.Application.Quiet {
+		logger.L.Info.Printf("[+] \"%s\" supports Git but has a startup script: ignoring Git\n", s.Name)
 	}
 
-	cmdLine := filepath.Join(".", config.StartScript.Name)
+	cmdLine := filepath.Join(".", config.C.StartScript.Name)
 
-	_, err := runCmdPretty(true, false, s.BaseDir, false, cmdLine)
+	_, err := utils.RunCmdPretty(true, false, s.BaseDir, false, cmdLine)
 	return err
 }
 
 func setStartFn(s *Server) {
 	s.Start = func() error {
 		if s.HasStartScript {
-			if config.Application.Quiet {
+			if config.C.Application.Quiet {
 				return runScript(s)
 			}
 
-			Info.Printf("[?] \"%s\" has a startup script!\n", s.Name)
-			opt, err := makeMenu(false,
-				Option{
+			logger.L.Info.Printf("[?] \"%s\" has a startup script!\n", s.Name)
+			opt, err := tui.MakeMenu(false,
+				tui.Option{
 					Description: "Run the script",
 					Action: func() error {
 						return runScript(s)
 					},
 				},
-				Option{
+				tui.Option{
 					Description: "No, stop",
 					Action: func() error {
-						Ok.Println("[+] Stopping")
+						logger.L.Ok.Println("[+] Stopping")
 						return nil
 					},
 				},
@@ -137,8 +151,8 @@ func setStartFn(s *Server) {
 			return opt.Action()
 		}
 
-		if s.HasGit && !config.Git.Disable {
-			if err := gitPreFn(s); err != nil {
+		if s.HasGit && !config.C.Git.Disable {
+			if err := git.PreFn(s.BaseDir); err != nil {
 				return err
 			}
 		}
@@ -148,15 +162,15 @@ func setStartFn(s *Server) {
 			return err
 		}
 
-		if s.HasGit && !config.Git.Disable {
+		if s.HasGit && !config.C.Git.Disable {
 			if !success {
-				Warn.Println("[?] The server terminated with an error. Update Git anyways?")
-				opt, err := makeMenu(false,
-					Option{
+				logger.L.Warn.Println("[?] The server terminated with an error. Update Git anyways?")
+				opt, err := tui.MakeMenu(false,
+					tui.Option{
 						Description: "Yes, update git anyways",
-						Action:      func() error { return gitPostFn(s) },
+						Action:      func() error { return git.PostFn(s.BaseDir) },
 					},
-					Option{
+					tui.Option{
 						Description: "No, I'll do it manually (advanced but recommended)",
 						Action:      func() error { return nil },
 					},
@@ -167,7 +181,7 @@ func setStartFn(s *Server) {
 				return opt.Action()
 			}
 
-			if err := gitPostFn(s); err != nil {
+			if err := git.PostFn(s.BaseDir); err != nil {
 				return err
 			}
 		}

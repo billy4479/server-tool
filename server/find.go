@@ -1,36 +1,15 @@
-package main
+package server
 
 import (
 	"errors"
 	"os"
 	"path/filepath"
+
+	"github.com/billy4479/server-tool/config"
 )
 
-type ServerType uint8
-
-const (
-	Vanilla ServerType = iota
-	Fabric
-)
-
-type Server struct {
-	Name           string
-	BaseDir        string
-	Version        *VersionInfo
-	Type           ServerType
-	HasGit         bool
-	HasStartScript bool
-	Start          func() error
-}
-
-const (
-	FabricJarName    = "fabric-server-launch.jar"
-	VanillaJarName   = "server.jar"
-	GitDirectoryName = ".git"
-)
-
-func findServers() ([]Server, error) {
-	serverDirs, err := os.ReadDir(config.Application.WorkingDir)
+func FindServers() ([]Server, error) {
+	serverDirs, err := os.ReadDir(config.C.Application.WorkingDir)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +18,7 @@ func findServers() ([]Server, error) {
 
 	for _, e := range serverDirs {
 		var s Server
-		s.BaseDir = filepath.Join(config.Application.WorkingDir, e.Name())
+		s.BaseDir = filepath.Join(config.C.Application.WorkingDir, e.Name())
 
 		if !e.IsDir() {
 			continue
@@ -66,12 +45,12 @@ func findServers() ([]Server, error) {
 					}
 				} else if entry.Name() == FabricJarName {
 					s.Type = Fabric
-				} else if entry.Name() == config.StartScript.Name {
-					s.HasStartScript = !config.StartScript.Disable
+				} else if entry.Name() == config.C.StartScript.Name {
+					s.HasStartScript = !config.C.StartScript.Disable
 				}
 			} else {
 				if entry.Name() == GitDirectoryName {
-					s.HasGit = !config.Git.Disable
+					s.HasGit = !config.C.Git.Disable
 				}
 			}
 		}
