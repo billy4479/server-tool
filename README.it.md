@@ -20,6 +20,5 @@ Per un utilizzo più avanzato vedi [Configurazione](README.md#configuring) più 
 
 ## Dove lo scarico?
 
-Non ci sono ancora release ma puoi scaricare una build da [Github Actions](https://github.com/billy4479/server-tool/actions).
-La UI è un po' complicata: devi cliccare sulla prima opzione in alto e poi scendere fino alla sezione `artifacts`.
-Ci dovrebbero essere due file, uno per Windows e uno per Linux.
+Puoi scaricare un eseguibile dalla [sezione Release](https://github.com/billy4479/server-tool/releases).
+Scarica il programma corretto per il tuo sistema operativo.

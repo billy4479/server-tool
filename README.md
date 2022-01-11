@@ -23,9 +23,8 @@ For a more advanced use see [Configuring](#configuring) below.
 
 ## Where to download
 
-There are no releases yet, but you can get a build from [Github Actions](https://github.com/billy4479/server-tool/actions).
-The UI is a bit ugly: you have to click on the top one then scroll down to the artifacts section.
-You'll find a Linux and a Windows executable there.
+You can get a binary from the [Release page](https://github.com/billy4479/server-tool/releases).
+Download the one for your operating system.
 
 ## Configuring
 
