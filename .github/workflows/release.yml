@@ -30,8 +30,30 @@ jobs:
           name: "server-tool.linux"
           path: "./build/server-tool.linux"
 
-  publish-win:
+  release:
+    name: Create Github Release
     needs: [build]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Get short tag name
+        uses: jungwinter/split@v1
+        id: split
+        with:
+          msg: ${{ github.ref }}
+          seperator: /
+      - name: Create Release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.split.outputs._2 }}
+          name: ${{ steps.split.outputs._2 }}
+          commit: ${{ github.sha }}
+          draft: false
+          prerelease: false
+
+  publish-win:
+    needs: [release]
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v1
@@ -45,7 +67,7 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: server-tool.windows.exe
-          path: ./build/server-tool.windows.exe
+          path: server-tool.windows.exe
       - name: Get release
         id: get_release_info
         uses: leahlundqvist/get-release@v1.3.1
@@ -60,12 +82,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-          asset_path: ./build/server-tool.windows.exe
+          asset_path: server-tool.windows.exe/server-tool.windows.exe
           asset_name: server-tool.windows.exe
           asset_content_type: application/octet-stream
 
   publish-linux:
-    needs: [build]
+    needs: [release]
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v1
@@ -76,11 +98,10 @@ jobs:
           msg: ${{ github.ref }}
           seperator: /
       - name: Fetch artifacts
-      - name: Fetch artifacts
         uses: actions/download-artifact@v1
         with:
           name: server-tool.linux
-          path: ./build/server-tool.linux
+          path: server-tool.linux
       - name: Get release
         id: get_release_info
         uses: leahlundqvist/get-release@v1.3.1
@@ -95,6 +116,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-          asset_path: ./build/server-tool.linux
+          asset_path: server-tool.linux/server-tool.linux
           asset_name: server-tool.linux
           asset_content_type: application/octet-stream
