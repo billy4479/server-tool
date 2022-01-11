@@ -1,5 +1,7 @@
 # Server Tool
 
+[**Versione italiana**](README.it.md)
+
 A simple tool to run and maintain different Minecraft servers.
 
 This tool supports Windows and Linux. MacOS is not supported (for now).
