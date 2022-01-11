@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"path"
 	"runtime"
 
@@ -15,7 +14,7 @@ import (
 	"github.com/fatih/color"
 )
 
-func Run() {
+func Run() int {
 	color.New(color.FgBlue, color.Bold).Println("[*] Server-Tool")
 
 	fmt.Printf("[+] OS: %s, Arch: %s\n", runtime.GOOS, runtime.GOARCH)
@@ -24,8 +23,7 @@ func Run() {
 		runtime.GOOS != "linux") ||
 		runtime.GOARCH != "amd64" {
 		logger.L.Error.Println("[!] Your OS is not supported!")
-		os.Exit(1)
-		return
+		return 1
 	}
 
 	err := config.LoadConfig()
@@ -33,7 +31,7 @@ func Run() {
 		logger.L.Warn.Println("[!] An error has occurred while loading the config file. Falling back on the default...")
 		if err = config.WriteConfig(); err != nil {
 			logger.L.Error.Printf("[!] %s\n", err.Error())
-			os.Exit(1)
+			return 1
 		}
 	} else if !config.C.Application.Quiet {
 		logger.L.Ok.Println("[+] Config loaded successfully")
@@ -42,8 +40,7 @@ func Run() {
 	if err := makeCacheDir(); err != nil {
 		logger.L.Error.Println("[!] Cache directory cannot be accessed or were not found!")
 		fmt.Println(err)
-		os.Exit(1)
-		return
+		return 1
 	}
 
 	if !config.C.Git.Disable {
@@ -141,11 +138,12 @@ func Run() {
 	)
 	if err != nil {
 		logger.L.Error.Printf("[!] %s\n", err.Error())
-		os.Exit(1)
+		return 1
 	}
 	if err = opt.Action(); err != nil {
 		logger.L.Error.Printf("[!] %s\n", err.Error())
-		os.Exit(1)
+		return 1
 	}
 
+	return 0
 }
