@@ -40,7 +40,7 @@ func MakeMenu(noDefault bool, options ...Option) (*Option, error) {
 		} else {
 			logger.L.Info.Printf("[?] Your option [0-%d] (default: 0): ", len(options)-1)
 		}
-		input, err := ReadLine()
+		input, err := readLine()
 		if err != nil {
 			return nil, err
 		}

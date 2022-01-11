@@ -8,7 +8,7 @@ import (
 
 var inputReader = bufio.NewReader(os.Stdin)
 
-func ReadLine() (string, error) {
+func readLine() (string, error) {
 	input, err := inputReader.ReadString('\n')
 	if err != nil {
 		return "", err

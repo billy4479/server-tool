@@ -83,40 +83,51 @@ func Run() {
 				}
 
 				s := server.Server{}
-				for s.Name == "" {
-					logger.L.Info.Print("[?] Enter a name for the new server: ")
-					s.Name, err = tui.ReadLine()
-					if err != nil {
-						return err
-					}
-
-					s.BaseDir = path.Join(config.C.Application.WorkingDir, s.Name)
+				s.Name, err = tui.StringOption("Enter a name for the new server", nil)
+				if err != nil {
+					return err
 				}
 
-				for s.Version == nil {
-					logger.L.Info.Print("[?] Enter a version for the new server (? to list all versions): ")
-					versionStr, err := tui.ReadLine()
-					if err != nil {
-						return err
-					}
+				s.BaseDir = path.Join(config.C.Application.WorkingDir, s.Name)
 
-					if versionStr == "?" {
+				versionStr, err := tui.StringOption(
+					"Enter a version for the new server (? to list all versions)",
+					func(s string) bool {
+						if s == "" {
+							return false
+						}
+
+						if s == "?" {
+							for _, v := range versions {
+								fmt.Printf("[+] %s\n", v.ID)
+							}
+							return false
+						}
+
 						for _, v := range versions {
-							fmt.Printf("[+] %s\n", v.ID)
+							if v.ID == s {
+								return true
+							}
 						}
-						continue
-					}
 
-					for _, v := range versions {
-						if v.ID == versionStr {
-							s.Version = &v
-							break
-						}
-					}
+						logger.L.Warn.Printf("[!] Version %s was not found. Type ? for a list of the available versions\n", s)
+						return false
+					},
+				)
 
-					if s.Version == nil {
-						logger.L.Warn.Println("[!] The chosen version was not found! Type ? for a list of the available versions")
+				if err != nil {
+					return err
+				}
+
+				for _, v := range versions {
+					if v.ID == versionStr {
+						s.Version = &v
+						break
 					}
+				}
+
+				if s.Version == nil {
+					panic("NOT REACHED")
 				}
 
 				err = server.CreateServer(&s)
