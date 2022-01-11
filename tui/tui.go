@@ -13,6 +13,7 @@ func readLine() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	input = strings.ReplaceAll(input, "\r", "")
 	input = strings.ReplaceAll(input, "\n", "")
 	return input, nil
 }
