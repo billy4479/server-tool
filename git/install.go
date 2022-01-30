@@ -53,6 +53,7 @@ func promptGitInstall() error {
 						if err != nil {
 							return err
 						}
+						defer gitInstaller.Body.Close()
 
 						tmp, err := os.CreateTemp("", "")
 						if err != nil {
@@ -76,7 +77,6 @@ func promptGitInstall() error {
 							return err
 						}
 
-						fmt.Println(tmp.Name())
 						return exec.Command(tmp.Name()).Run()
 					}
 				}

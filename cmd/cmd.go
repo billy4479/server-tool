@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"path"
 	"runtime"
 
@@ -11,11 +12,12 @@ import (
 	"github.com/billy4479/server-tool/manifest"
 	"github.com/billy4479/server-tool/server"
 	"github.com/billy4479/server-tool/tui"
+	"github.com/billy4479/server-tool/updater"
 	"github.com/fatih/color"
 )
 
 func Run() int {
-	color.New(color.FgBlue, color.Bold).Println("[*] Server-Tool")
+	color.New(color.FgBlue, color.Bold).Println("[*] Server-Tool version", updater.Version)
 
 	fmt.Printf("[+] OS: %s, Arch: %s\n", runtime.GOOS, runtime.GOARCH)
 
@@ -35,6 +37,27 @@ func Run() int {
 		}
 	} else if !config.C.Application.Quiet {
 		logger.L.Ok.Println("[+] Config loaded successfully")
+	}
+
+	needRestart, err := updater.AmITheUpdate(os.Args)
+	if err != nil {
+		logger.L.Error.Println("[!] An error occurred while updating")
+		logger.L.Debug.Println(err)
+		return 1
+	}
+	if needRestart {
+		logger.L.Ok.Println("[+] Update was successful, restart the application.")
+		logger.L.Debug.Println(err)
+		return 0
+	}
+
+	err = updater.Update()
+	if err != nil {
+		logger.L.Error.Println("[!] Unable to update!")
+		logger.L.Debug.Println(err)
+
+		// We don't crash here
+		err = nil
 	}
 
 	if err := makeCacheDir(); err != nil {
