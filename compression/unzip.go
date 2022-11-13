@@ -59,5 +59,6 @@ func Unzip(input io.ReaderAt, size int64, dest string, skipName string) error {
 			return err
 		}
 	}
-	return nil
+
+	return moveOutOfSingleFolder(dest)
 }

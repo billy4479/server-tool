@@ -19,7 +19,7 @@ import (
 )
 
 func installJava(javaVersion int) error {
-	res, err := http.Get(fmt.Sprintf(adoptiumApiUrl, javaVersion))
+	res, err := http.Get(fmt.Sprintf(adoptiumApiUrl, javaVersion, runtime.GOOS))
 	if err != nil {
 		return err
 	}
@@ -30,31 +30,17 @@ func installJava(javaVersion int) error {
 		return err
 	}
 
-	url := ""
-	name := ""
-	relName := ""
-	var size uint64 = 0
-	var checksum []byte = nil
+	openjdk := j.Children()[0]
 
-	for _, openjdk := range j.Children() {
-		binary := openjdk.Search("binary")
-
-		if binary.Search("os").Data().(string) == runtime.GOOS &&
-			binary.Search("architecture").Data().(string) == "x64" &&
-			binary.Search("image_type").Data().(string) == "jdk" {
-
-			pack := binary.Search("package")
-			url = pack.Search("link").Data().(string)
-			name = pack.Search("name").Data().(string)
-			size = uint64(pack.Search("size").Data().(float64))
-			relName = openjdk.Search("release_name").Data().(string)
-			checksum, err = hex.DecodeString(pack.Search("checksum").Data().(string))
-			if err != nil {
-				return err
-			}
-
-			break
-		}
+	binary := openjdk.Search("binary")
+	pack := binary.Search("package")
+	url := pack.Search("link").Data().(string)
+	name := pack.Search("name").Data().(string)
+	size := uint64(pack.Search("size").Data().(float64))
+	relName := openjdk.Search("release_name").Data().(string)
+	checksum, err := hex.DecodeString(pack.Search("checksum").Data().(string))
+	if err != nil {
+		return err
 	}
 
 	if url == "" || name == "" || checksum == nil || relName == "" {

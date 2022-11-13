@@ -64,5 +64,5 @@ func Untargz(input io.Reader, dest string, skipName string) error {
 		}
 	}
 
-	return nil
+	return moveOutOfSingleFolder(dest)
 }

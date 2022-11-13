@@ -17,3 +17,26 @@ func checkIllegalPath(dest, name string) error {
 	}
 	return nil
 }
+
+func moveOutOfSingleFolder(path string) error {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return err
+	}
+	if len(entries) != 1 || !entries[0].IsDir() {
+		return nil
+	}
+	singleDirPath := filepath.Join(path, entries[0].Name())
+	entries, err = os.ReadDir(singleDirPath)
+	if err != nil {
+		return err
+	}
+	for _, e := range entries {
+		err = os.Rename(filepath.Join(singleDirPath, e.Name()), filepath.Join(path, e.Name()))
+		if err != nil {
+			return err
+		}
+	}
+
+	return os.RemoveAll(singleDirPath)
+}

@@ -14,7 +14,7 @@ func javaExeName() string {
 	return "java"
 }
 
-const adoptiumApiUrl = "https://api.adoptium.net/v3/assets/latest/%d/hotspot?release=latest&jvm_impl=hotspot&vendor=adoptium"
+const adoptiumApiUrl = "https://api.adoptium.net/v3/assets/latest/%d/hotspot?os=%s&architecture=x64&image_type=jre"
 
 func javaDir() string     { return path.Join(config.C.Application.CacheDir, "java") }
 func javaExePath() string { return path.Join("bin", javaExeName()) }
