@@ -14,6 +14,7 @@ import (
 	"github.com/billy4479/server-tool/tui"
 	"github.com/billy4479/server-tool/updater"
 	"github.com/fatih/color"
+	"github.com/skratchdot/open-golang/open"
 )
 
 func Run() int {
@@ -156,6 +157,18 @@ func Run() int {
 				}
 				logger.L.Ok.Println("[+] Server created successfully!")
 				return nil
+			},
+		},
+		tui.Option{
+			Description: "Open server folder",
+			Action: func() error {
+				return open.Start(config.C.Application.WorkingDir)
+			},
+		},
+		tui.Option{
+			Description: "Open cache folder",
+			Action: func() error {
+				return open.Start(config.C.Application.CacheDir)
 			},
 		},
 		tui.Option{
