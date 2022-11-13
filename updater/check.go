@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Jeffail/gabs/v2"
+	"github.com/billy4479/server-tool/logger"
 )
 
 var (
@@ -19,6 +20,10 @@ const (
 )
 
 func checkUpdates() (bool, string, error) {
+	if Version == "dev" {
+		logger.L.Info.Println("[+] This is a development build, skipping updates.")
+		return false, "", nil
+	}
 
 	res, err := http.Get(releaseURL)
 	if err != nil {
@@ -37,11 +42,6 @@ func checkUpdates() (bool, string, error) {
 			downloadURL := rel.Search("browser_download_url").Data().(string)
 
 			s := strings.Split(strings.TrimLeft(Version, "v"), "-")
-
-			// Just in case I need this in the future
-			// if len(s) > 1 {
-			// This is a development version
-			// }
 
 			current, err := strconv.ParseInt(strings.ReplaceAll(s[0], ".", ""), 10, 32)
 			if err != nil {
