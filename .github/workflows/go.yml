@@ -5,28 +5,27 @@ on:
   pull_request:
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.17
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.17
 
-    - name: Build
-      run: make build-release
+      - name: Build
+        run: make build-release
 
-    - name: Upload Windows build
-      uses: actions/upload-artifact@v2.3.1
-      with:
-        name: "server-tool.windows.exe"
-        path: "./build/server-tool.windows.exe"
-        
-    - name: Upload Linux build
-      uses: actions/upload-artifact@v2.3.1
-      with:
-        name: "server-tool.linux"
-        path: "./build/server-tool.linux"
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v3
+        with:
+          name: "server-tool.windows.exe"
+          path: "./build/server-tool.windows.exe"
+
+      - name: Upload Linux build
+        uses: actions/upload-artifact@v3
+        with:
+          name: "server-tool.linux"
+          path: "./build/server-tool.linux"
