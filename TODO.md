@@ -5,6 +5,6 @@
   - [X] Custom Git commands
 - [X] CI/CD
 - [X] OTA updates
-- [ ] Download just the JRE not the whole JDK
+- [X] Download just the JRE not the whole JDK
 - [X] Git detection and setup
 - [ ] Fabric installation
