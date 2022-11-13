@@ -35,7 +35,7 @@ Depending on your operating system this fila can be found in different places:
 
 - On Windows: `%AppData%\server-tool\server-tool.yml`
 - On MacOS: `$HOME/Library/Application Support`
-- On *nix platforms: `$XDG_CONFIG_HOME\server-tool\server-tool.yml`
+- On \*nix platforms: `$XDG_CONFIG_HOME\server-tool\server-tool.yml`
 
 Or it's position can be overridden by setting the `CONFIG_PATH` environment variable.
 
@@ -44,7 +44,6 @@ This is the default configuration (lines starting with `#` are comments):
 ```yml
 # Application related settings
 application:
-
   # Be more concise in the output
   quiet: false
 
@@ -61,7 +60,6 @@ application:
 
 # These options are related to the Minecraft server executable
 minecraft:
-
   # Do not print server logs.
   #
   # Stdin is still forwarded so you can still type commands.
@@ -76,7 +74,6 @@ minecraft:
 
 # Java related options
 java:
-
   # Provide a Java executable yourself.
   #
   # By default the right version for each Minecraft version is downloaded
@@ -85,7 +82,6 @@ java:
 
   # Java memory
   memory:
-    
     # How much?
     amount: 6
 
@@ -94,7 +90,6 @@ java:
 
   # JVM flags (advanced)
   flags:
-
     # Array of flags passed before `-jar`
     extraflags: []
 
@@ -103,7 +98,6 @@ java:
 
 # Git related options
 git:
-  
   # Completely disable Git integration
   disable: false
 
@@ -112,9 +106,14 @@ git:
   # This is used to create a new repository for new servers
   disablegithubintegration: false
 
+  # Creates a lock file that is immediately committed to the repo
+  #
+  # When the server is started this program checks for the presence of a lock file and immediately aborts if it finds one
+  # Note that if config overrides are active this option will be ignored
+  uselockfile: true
+
   # Overrides for Git (advanced)
   overrides:
-    
     # Overrides are disabled by default
     enable: false
 
@@ -148,7 +147,6 @@ git:
 #
 # WARNING: this is an advanced (and unsafe) topic
 startscript:
-
   # Disable this feature completely
   disable: false
 

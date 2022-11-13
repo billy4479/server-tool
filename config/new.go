@@ -22,6 +22,7 @@ func NewConfig() *Config {
 	{
 		c.Git.Disable = false
 		c.Git.DisableGithubIntegration = false
+		c.Git.UseLockFile = true
 		c.Git.Overrides.Enable = false
 		c.Git.Overrides.CustomPreCommands = nil
 		c.Git.Overrides.CustomPostCommands = nil

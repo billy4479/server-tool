@@ -32,6 +32,7 @@ type Config struct {
 	Git struct {
 		Disable                  bool
 		DisableGithubIntegration bool
+		UseLockFile              bool
 		Overrides                struct {
 			Enable             bool
 			CustomPreCommands  [][]string
