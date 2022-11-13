@@ -158,6 +158,12 @@ func Run() int {
 				return nil
 			},
 		},
+		tui.Option{
+			Description: "Quit",
+			Action: func() error {
+				return nil
+			},
+		},
 	)
 	if err != nil {
 		logger.L.Error.Printf("[!] %s\n", err.Error())
@@ -165,6 +171,12 @@ func Run() int {
 	}
 	if err = opt.Action(); err != nil {
 		logger.L.Error.Printf("[!] %s\n", err.Error())
+		return 1
+	}
+
+	err = config.WriteConfig()
+	if err != nil {
+		logger.L.Error.Printf("[!] Error writing the config %s\n", err.Error())
 		return 1
 	}
 
