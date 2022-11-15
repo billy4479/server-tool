@@ -18,7 +18,7 @@ func do(URL string) func() error {
 		}
 		defer new.Body.Close()
 
-		tmp, err := os.CreateTemp("", "")
+		tmp, err := os.CreateTemp("", "*.exe")
 		if err != nil {
 			return err
 		}
