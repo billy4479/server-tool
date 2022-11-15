@@ -70,7 +70,7 @@ func PreFn(baseDir string) (err error) {
 				}
 			}
 
-			_, err = utils.RunCmdPretty(false, true, baseDir, false, "git", "add", lockFilePath)
+			_, err = utils.RunCmdPretty(false, true, baseDir, false, "git", "add", "-A")
 			if err != nil {
 				return err
 			}
