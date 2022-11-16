@@ -50,20 +50,29 @@ var (
 	C             *Config = nil
 )
 
-func makeConfigFolder() (configPath string, err error) {
+func GetConfigPath() (configPath string, configDir string, err error) {
 	configPathOverride := os.Getenv("CONFIG_PATH")
-	configDir := ""
+	configDir = ""
 	if configPathOverride != "" {
 		configPath = configPathOverride
 		configDir = filepath.Dir(configPath)
 	} else {
 		configDir, err = os.UserConfigDir()
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		configDir = filepath.Join(configDir, utils.ProgName)
 		configPath = filepath.Join(configDir, utils.ProgName+".yml")
 	}
 
-	return configPath, os.MkdirAll(configDir, 0700)
+	return
+}
+
+func makeConfigFolder() (configPath string, err error) {
+	configPath, configDir, err := GetConfigPath()
+	if err != nil {
+		return
+	}
+
+	return configPath, os.MkdirAll(configDir, 0755)
 }

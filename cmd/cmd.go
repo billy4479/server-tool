@@ -166,6 +166,16 @@ func Run() int {
 			},
 		},
 		tui.Option{
+			Description: "Open config",
+			Action: func() error {
+				configPath, _, err := config.GetConfigPath()
+				if err != nil {
+					return err
+				}
+				return open.Start(configPath)
+			},
+		},
+		tui.Option{
 			Description: "Open cache folder",
 			Action: func() error {
 				return open.Start(config.C.Application.CacheDir)

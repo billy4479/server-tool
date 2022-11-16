@@ -48,10 +48,10 @@ func PreFn(baseDir string) (err error) {
 	if _, err := os.Stat(lockFilePath); err == nil {
 		// This fails even if the lock file is disabled, better safe than sorry
 		b, err := os.ReadFile(lockFilePath)
-		if err != nil {
-			return err
-		}
 		s := string(b)
+		if err != nil || len(s) == 0 {
+			s = "????"
+		}
 		return fmt.Errorf("A lockfile was found! The server is probably being used by %s, aborting.", s[:len(s)-1])
 	} else if errors.Is(err, os.ErrNotExist) {
 		if config.C.Git.UseLockFile {
@@ -76,6 +76,11 @@ func PreFn(baseDir string) (err error) {
 			}
 
 			_, err = utils.RunCmdPretty(false, true, baseDir, false, "git", "commit", "-m", "Pushing lock file")
+			if err != nil {
+				return err
+			}
+
+			_, err = utils.RunCmdPretty(false, true, baseDir, false, "git", "push")
 			if err != nil {
 				return err
 			}
@@ -111,7 +116,7 @@ func PostFn(baseDir string) (err error) {
 
 	if config.C.Git.UseLockFile {
 		lockFilePath := filepath.Join(baseDir, lockFileName)
-		_, err = utils.RunCmdPretty(false, true, baseDir, false, "git", "rm", lockFilePath)
+		_, err = utils.RunCmdPretty(false, true, baseDir, false, "git", "rm", "-f", lockFilePath)
 		if err != nil {
 			return err
 		}
