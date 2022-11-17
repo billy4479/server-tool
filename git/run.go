@@ -115,8 +115,7 @@ func PostFn(baseDir string) (err error) {
 	}
 
 	if config.C.Git.UseLockFile {
-		lockFilePath := filepath.Join(baseDir, lockFileName)
-		_, err = utils.RunCmdPretty(false, true, baseDir, false, "git", "rm", "-f", lockFilePath)
+		_, err = utils.RunCmdPretty(false, true, baseDir, false, "git", "rm", lockFileName)
 		if err != nil {
 			return err
 		}
