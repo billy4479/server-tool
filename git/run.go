@@ -63,9 +63,14 @@ func PreFn(baseDir string) (err error) {
 				defer f.Close()
 
 				cmd := exec.Command("git", "config", "user.name")
-				cmd.Stdout = f
 				cmd.Stderr = os.Stderr
-				if err = cmd.Run(); err != nil {
+				out, err := cmd.Output()
+				if err != nil {
+					return err
+				}
+
+				_, err = f.Write(out)
+				if err != nil {
 					return err
 				}
 			}
