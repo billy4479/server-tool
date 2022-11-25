@@ -1,4 +1,4 @@
-package java
+package servertool
 
 import (
 	"bytes"
@@ -13,10 +13,20 @@ import (
 	"runtime"
 
 	"github.com/Jeffail/gabs/v2"
-	"github.com/billy4479/server-tool/compression"
-	"github.com/billy4479/server-tool/logger"
 	"github.com/dustin/go-humanize"
 )
+
+func javaExeName() string {
+	if runtime.GOOS == "windows" {
+		return "java.exe"
+	}
+	return "java"
+}
+
+const adoptiumApiUrl = "https://api.adoptium.net/v3/assets/latest/%d/hotspot?os=%s&architecture=x64&image_type=jre"
+
+func javaDir() string     { return path.Join(C.Application.CacheDir, "java") }
+func javaExePath() string { return path.Join("bin", javaExeName()) }
 
 func installJava(javaVersion int) error {
 	res, err := http.Get(fmt.Sprintf(adoptiumApiUrl, javaVersion, runtime.GOOS))
@@ -47,7 +57,7 @@ func installJava(javaVersion int) error {
 		return errors.New("Unable to find needed variables in JSON response")
 	}
 
-	logger.L.Info.Printf("[+] Downloading %s (%s)\n", name, humanize.Bytes(size))
+	L.Info.Printf("[+] Downloading %s (%s)\n", name, humanize.Bytes(size))
 
 	res, err = http.Get(url)
 	if err != nil {
@@ -100,13 +110,47 @@ func installJava(javaVersion int) error {
 
 	dest := path.Join(javaDir(), fmt.Sprint(javaVersion))
 
-	logger.L.Info.Printf("[+] Extracting %s\n", name)
+	L.Info.Printf("[+] Extracting %s\n", name)
 	// Windows uses .zip, the rest .tar.gz
 	if runtime.GOOS == "windows" {
-		err = compression.Unzip(tmp, res.ContentLength, dest, relName)
+		err = Unzip(tmp, res.ContentLength, dest, relName)
 	} else {
-		err = compression.Untargz(tmp, dest, relName)
+		err = Untargz(tmp, dest, relName)
 	}
 
 	return err
+}
+
+func EnsureJavaIsInstalled(javaVersion int) (string, error) {
+	javaVersionString := fmt.Sprint(javaVersion)
+	err := os.MkdirAll(javaDir(), 0700)
+	if err != nil {
+		return "", nil
+	}
+
+	fullExePath := path.Join(javaDir(), javaVersionString, javaExePath())
+
+	entries, err := os.ReadDir(javaDir())
+	if err != nil {
+		return "", nil
+	}
+	for _, e := range entries {
+		if e.IsDir() && e.Name() == javaVersionString {
+			return fullExePath, nil
+		}
+	}
+
+	L.Warn.Printf("[!] Java %d not found! Downloading it now...\n", javaVersion)
+	err = installJava(javaVersion)
+	if err != nil {
+		L.Error.Printf("[!] An error occurred while downloading Java version %d\n", javaVersion)
+		L.Info.Println(err)
+		return "", err
+	}
+
+	if !C.Application.Quiet {
+		L.Ok.Println("[+] Done!")
+	}
+
+	return fullExePath, nil
 }

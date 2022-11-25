@@ -1,4 +1,4 @@
-package utils
+package servertool
 
 import (
 	"errors"
@@ -6,8 +6,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-
-	"github.com/billy4479/server-tool/logger"
 )
 
 const ProgName = "server-tool"
@@ -27,7 +25,7 @@ func RunCmdPretty(verbose bool, must bool, workDir string, noOutput bool, name s
 			cmdLine += " " + arg
 		}
 
-		logger.L.Info.Printf("[+] Running \"%s\"\n", cmdLine)
+		L.Info.Printf("[+] Running \"%s\"\n", cmdLine)
 	}
 	cmd := exec.Command(name, args...)
 	if !noOutput {
@@ -38,11 +36,11 @@ func RunCmdPretty(verbose bool, must bool, workDir string, noOutput bool, name s
 	cmd.Dir = workDir
 
 	if verbose {
-		logger.L.Info.Println("[+] Start of command output")
+		L.Info.Println("[+] Start of command output")
 	}
 	err := cmd.Run()
 	if verbose {
-		logger.L.Info.Println("[+] End of command output")
+		L.Info.Println("[+] End of command output")
 	}
 
 	if err != nil {
@@ -58,7 +56,7 @@ func RunCmdPretty(verbose bool, must bool, workDir string, noOutput bool, name s
 	}
 
 	if verbose {
-		logger.L.Ok.Println("[+] Process has exited successfully")
+		L.Ok.Println("[+] Process has exited successfully")
 	}
 
 	return true, nil
