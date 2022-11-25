@@ -136,9 +136,7 @@ func updateVersionInfos() ([]VersionInfo, error) {
 			infos.data = append(infos.data, info)
 			infos.Unlock()
 
-			if !C.Application.Quiet {
-				fmt.Printf("    [+] %s                   \r", id)
-			}
+			fmt.Printf("    [+] %s                   \r", id)
 		}()
 	}
 
@@ -160,10 +158,8 @@ func updateVersionInfos() ([]VersionInfo, error) {
 		return nil, err
 	}
 
-	if !C.Application.Quiet {
-		// TODO: Find a better way...
-		L.Ok.Println("[+] Done                      ")
-	}
+	// TODO: Find a better way...
+	L.Ok.Println("[+] Done                      ")
 
 	return infos.data, nil
 }
@@ -176,11 +172,7 @@ func GetVersionInfos() ([]VersionInfo, error) {
 	manifestStat, err := os.Stat(versionManifest())
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			if C.Application.Quiet {
-				L.Info.Println("[+] Updating manifests")
-			} else {
-				L.Info.Println("[+] Version manifests are missing. Dowloading them again...")
-			}
+			L.Info.Println("[+] Version manifests are missing. Dowloading them again...")
 
 			return updateVersionInfos()
 		}
@@ -189,11 +181,7 @@ func GetVersionInfos() ([]VersionInfo, error) {
 	}
 
 	if manifestStat.ModTime().Add(expireTime).Before(time.Now()) {
-		if C.Application.Quiet {
-			L.Info.Println("[+] Updating manifests")
-		} else {
-			L.Info.Println("[+] Version manifests are expired. Dowloading them again...")
-		}
+		L.Info.Println("[+] Version manifests are expired. Dowloading them again...")
 		return updateVersionInfos()
 	}
 

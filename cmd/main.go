@@ -29,17 +29,31 @@ func makeCacheDir() (err error) {
 }
 
 func main() {
-	exitCode := Run()
-
-	if runtime.GOOS == "windows" {
-		fmt.Print("Press enter to continue...")
-		fmt.Scanln()
+	err := Run()
+	if err != nil {
+		st.L.Error.Printf("[!] %s", err)
+		os.Exit(1)
 	}
-
-	os.Exit(exitCode)
 }
 
-func Run() int {
+type UIMode int
+
+const (
+	GUI UIMode = iota
+	TUI
+	CLI
+)
+
+func Run() error {
+	uiMode := GUI
+
+	defer func() {
+		if runtime.GOOS == "windows" && uiMode == TUI {
+			fmt.Print("Press enter to continue...")
+			fmt.Scanln()
+		}
+	}()
+
 	color.New(color.FgBlue, color.Bold).Println("[*] Server-Tool version", st.Version)
 
 	fmt.Printf("[+] OS: %s, Arch: %s\n", runtime.GOOS, runtime.GOARCH)
@@ -47,60 +61,54 @@ func Run() int {
 	if (runtime.GOOS != "windows" &&
 		runtime.GOOS != "linux") ||
 		runtime.GOARCH != "amd64" {
-		st.L.Error.Println("[!] Your OS is not supported!")
-		return 1
+		return fmt.Errorf("[!] Your OS is not supported!")
 	}
 
 	err := st.LoadConfig()
 	if err != nil {
 		st.L.Warn.Println("[!] An error has occurred while loading the config file. Falling back on the default...")
 		if err = st.WriteConfig(); err != nil {
-			st.L.Error.Printf("[!] %s\n", err.Error())
-			return 1
+			return err
 		}
-	} else if !st.C.Application.Quiet {
+	} else {
 		st.L.Ok.Println("[+] Config loaded successfully")
 	}
 
 	needRestart, err := st.AmITheUpdate(os.Args)
 	if err != nil {
-		st.L.Error.Println("[!] An error occurred while updating")
-		st.L.Debug.Println(err)
-		return 1
+		return err
 	}
 	if needRestart {
 		st.L.Ok.Println("[+] Update was successful, restart the application.")
-		st.L.Debug.Println(err)
-		return 0
+		return nil
 	}
 
-	err = st.Update()
+	// FIXME: check before forcing the update
+	err = st.DoUpdateIfNeeded()
 	if err != nil {
-		st.L.Error.Println("[!] Unable to update!")
-		st.L.Debug.Println(err)
+		st.L.Error.Println(err)
+		st.L.Warn.Println("[!] Unable to update! Proceeding anyways...")
 
 		// We don't crash here
 		err = nil
 	}
 
 	if err := makeCacheDir(); err != nil {
-		st.L.Error.Println("[!] Cache directory cannot be accessed or were not found!")
-		fmt.Println(err)
-		return 1
+		return err
 	}
 
 	if !st.C.Git.Disable {
 		gitVersion, err := st.DetectGit()
 		if err != nil {
 			st.L.Warn.Println("[!] Git not detected!")
-		} else if !st.C.Application.Quiet {
+		} else {
 			st.L.Info.Printf("[+] Found Git %s", gitVersion)
 		}
 	}
 
 	st.L.Ok.Println("[?] What do we do?")
-	opt, err := st.MakeMenu(false,
-		st.Option{
+	opt, err := MakeMenu(false,
+		Option{
 			Description: "Start a server",
 			Action: func() error {
 				servers, err := st.FindServers()
@@ -109,7 +117,7 @@ func Run() int {
 				}
 
 				st.L.Info.Println("[?] The following servers have been found:")
-				c, err := st.MakeMenu(true, st.MakeServersMenuItem(servers)...)
+				c, err := MakeMenu(true, MakeServersMenuItem(servers)...)
 				if err != nil {
 					return err
 				}
@@ -117,7 +125,7 @@ func Run() int {
 				return c.Action()
 			},
 		},
-		st.Option{
+		Option{
 			Description: "Create new a server",
 			Action: func() error {
 				versions, err := st.GetVersionInfos()
@@ -126,14 +134,14 @@ func Run() int {
 				}
 
 				s := st.Server{}
-				s.Name, err = st.StringOption("Enter a name for the new server", nil)
+				s.Name, err = StringOption("Enter a name for the new server", nil)
 				if err != nil {
 					return err
 				}
 
 				s.BaseDir = path.Join(st.C.Application.WorkingDir, s.Name)
 
-				versionStr, err := st.StringOption(
+				versionStr, err := StringOption(
 					"Enter a version for the new server (? to list all versions)",
 					func(s string) bool {
 						if s == "" {
@@ -181,13 +189,13 @@ func Run() int {
 				return nil
 			},
 		},
-		st.Option{
+		Option{
 			Description: "Open server folder",
 			Action: func() error {
 				return open.Start(st.C.Application.WorkingDir)
 			},
 		},
-		st.Option{
+		Option{
 			Description: "Open config",
 			Action: func() error {
 				configPath, _, err := st.GetConfigPath()
@@ -197,13 +205,13 @@ func Run() int {
 				return open.Start(configPath)
 			},
 		},
-		st.Option{
+		Option{
 			Description: "Open cache folder",
 			Action: func() error {
 				return open.Start(st.C.Application.CacheDir)
 			},
 		},
-		st.Option{
+		Option{
 			Description: "Quit",
 			Action: func() error {
 				return nil
@@ -211,19 +219,16 @@ func Run() int {
 		},
 	)
 	if err != nil {
-		st.L.Error.Printf("[!] %s\n", err.Error())
-		return 1
+		return err
 	}
 	if err = opt.Action(); err != nil {
-		st.L.Error.Printf("[!] %s\n", err.Error())
-		return 1
+		return err
 	}
 
 	err = st.WriteConfig()
 	if err != nil {
-		st.L.Error.Printf("[!] Error writing the config %s\n", err.Error())
-		return 1
+		return err
 	}
 
-	return 0
+	return nil
 }

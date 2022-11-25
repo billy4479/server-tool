@@ -19,13 +19,11 @@ const (
 )
 
 type Server struct {
-	Name           string
-	BaseDir        string
-	Version        *VersionInfo
-	Type           ServerType
-	HasGit         bool
-	HasStartScript bool
-	Start          func() error
+	Name    string
+	BaseDir string
+	Version *VersionInfo
+	Type    ServerType
+	HasGit  bool
 }
 
 const (
@@ -58,16 +56,12 @@ var (
 )
 
 func ensureJavaPretty(s *Server) (string, error) {
-	if !C.Application.Quiet {
-		L.Info.Printf("[+] \"%s\" requires Java %d\n", s.Name, s.Version.JavaVersion)
-	}
+	L.Info.Printf("[+] \"%s\" requires Java %d\n", s.Name, s.Version.JavaVersion)
 	javaExe, err := EnsureJavaIsInstalled(s.Version.JavaVersion)
 	if err != nil {
 		return "", err
 	}
-	if !C.Application.Quiet {
-		L.Ok.Printf("[+] Java was found at \"%s\"\n", javaExe)
-	}
+	L.Ok.Printf("[+] Java was found at \"%s\"\n", javaExe)
 	return javaExe, nil
 }
 
@@ -115,7 +109,7 @@ func runJar(s *Server) (bool, error) {
 	}
 
 	return RunCmdPretty(
-		!C.Application.Quiet,
+		true,
 		false,
 		s.BaseDir,
 		C.Minecraft.Quiet,
@@ -124,127 +118,27 @@ func runJar(s *Server) (bool, error) {
 	)
 }
 
-func runScript(s *Server) error {
-	if s.Version != nil {
-		if _, err := ensureJavaPretty(s); err != nil {
+func (s *Server) Start() error {
+	if s.HasGit && !C.Git.Disable {
+		if err := PreFn(s.BaseDir); err != nil {
 			return err
 		}
-	} else if !C.Application.Quiet {
-		L.Warn.Println("[!] server.jar not found! Running the script blindly...")
 	}
 
-	if s.HasGit && !C.Application.Quiet {
-		L.Info.Printf("[+] \"%s\" supports Git but has a startup script: ignoring Git\n", s.Name)
+	success, err := runJar(s)
+	if err != nil {
+		return err
 	}
 
-	cmdLine := filepath.Join(".", C.StartScript.Name)
-
-	_, err := RunCmdPretty(true, false, s.BaseDir, false, cmdLine)
-	return err
-}
-
-func setStartFn(s *Server) {
-	s.Start = func() error {
-		if s.HasStartScript {
-			if C.Application.Quiet {
-				return runScript(s)
-			}
-
-			L.Info.Printf("[?] \"%s\" has a startup script!\n", s.Name)
-			opt, err := MakeMenu(false,
-				Option{
-					Description: "Run the script",
-					Action: func() error {
-						return runScript(s)
-					},
-				},
-				Option{
-					Description: "No, stop",
-					Action: func() error {
-						L.Ok.Println("[+] Stopping")
-						return nil
-					},
-				},
-			)
-			if err != nil {
-				return err
-			}
-
-			return opt.Action()
-		}
-
-		if s.HasGit && !C.Git.Disable {
-			if err := PreFn(s.BaseDir); err != nil {
-				return err
-			}
-		}
-
-		success, err := runJar(s)
-		if err != nil {
+	if s.HasGit && !C.Git.Disable {
+		if !success {
+			L.Warn.Println("[!] The server terminated with an error. Git will not update.\nGiving up, you are on your own now")
+		} else if err := PostFn(s.BaseDir); err != nil {
 			return err
 		}
-
-		if s.HasGit && !C.Git.Disable {
-			if !success {
-				L.Warn.Println("[?] The server terminated with an error. Update Git anyways?")
-				opt, err := MakeMenu(false,
-					Option{
-						Description: "Yes, update git anyways",
-						Action:      func() error { return PostFn(s.BaseDir) },
-					},
-					Option{
-						Description: "No, I'll do it manually (advanced but recommended)",
-						Action:      func() error { return nil },
-					},
-				)
-				if err != nil {
-					return err
-				}
-				return opt.Action()
-			}
-
-			if err := PostFn(s.BaseDir); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
-}
-
-func MakeServersMenuItem(servers []Server) []Option {
-	result := []Option{}
-
-	for _, s := range servers {
-		desc := fmt.Sprintf("\"%s\" (", s.Name)
-		if s.Version == nil {
-			desc += "?? on ??"
-		} else {
-			desc += fmt.Sprintf("%s on ", s.Version.ID)
-			switch s.Type {
-			case Vanilla:
-				desc += "Vanilla"
-			case Fabric:
-				desc += "Fabric"
-			}
-		}
-
-		if s.HasGit {
-			desc += " - Git"
-		}
-		if s.HasStartScript {
-			desc += ", Start Script"
-		}
-
-		desc += ")"
-
-		result = append(result, Option{
-			Description: desc,
-			Action:      s.Start,
-		})
 	}
 
-	return result
+	return nil
 }
 
 func FindServers() ([]Server, error) {
@@ -284,8 +178,6 @@ func FindServers() ([]Server, error) {
 					}
 				} else if entry.Name() == FabricJarName {
 					s.Type = Fabric
-				} else if entry.Name() == C.StartScript.Name {
-					s.HasStartScript = !C.StartScript.Disable
 				}
 			} else {
 				if entry.Name() == GitDirectoryName {
@@ -293,13 +185,8 @@ func FindServers() ([]Server, error) {
 				}
 			}
 		}
-		if s.Version == nil && !s.HasStartScript {
-			continue
-		}
 
 		s.Name = e.Name()
-		setStartFn(&s)
-
 		servers = append(servers, s)
 	}
 
@@ -368,9 +255,8 @@ func CreateServer(s *Server) error {
 		return err
 	}
 
-	if !C.Application.Quiet {
-		L.Ok.Println("[+] Done!")
-	}
+	L.Ok.Println("[+] Done!")
+
 	if !C.Minecraft.NoEULA {
 		L.Info.Println("[+] Accepting the EULA...")
 
@@ -384,9 +270,7 @@ func CreateServer(s *Server) error {
 			return err
 		}
 
-		if !C.Application.Quiet {
-			L.Ok.Println("[+] Done!")
-		}
+		L.Ok.Println("[+] Done!")
 	}
 	return nil
 }

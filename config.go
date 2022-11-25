@@ -9,7 +9,6 @@ import (
 
 type Config struct {
 	Application struct {
-		Quiet      bool
 		WorkingDir string
 		CacheDir   string
 	}
@@ -38,10 +37,6 @@ type Config struct {
 			CustomPreCommands  [][]string
 			CustomPostCommands [][]string
 		}
-	}
-	StartScript struct {
-		Disable bool
-		Name    string
 	}
 }
 
@@ -80,7 +75,6 @@ func makeConfigFolder() (configPath string, err error) {
 func NewConfig() *Config {
 	c := new(Config)
 	{
-		c.Application.Quiet = false
 		c.Application.WorkingDir = "."
 		c.Application.CacheDir = ""
 	}

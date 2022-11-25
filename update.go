@@ -13,30 +13,19 @@ import (
 	"github.com/Jeffail/gabs/v2"
 )
 
-func Update() error {
-	needUpdate, newVersionURL, err := checkUpdates()
+func DoUpdateIfNeeded() error {
+	needUpdate, newVersionURL, err := CheckUpdates()
 	if err != nil {
 		return err
 	}
 
 	if needUpdate {
-		L.Info.Println("[?] A new version as been found!")
-		option, err := MakeMenu(false,
-			Option{
-				Description: "Update now",
-				Action:      do(newVersionURL),
-			},
-			Option{
-				Description: "Do that later",
-				Action:      func() error { return nil },
-			},
-		)
-
+		L.Info.Println("[+] A new version as been found!")
 		if err != nil {
 			return err
 		}
 
-		err = option.Action()
+		err = do(newVersionURL)
 		if err != nil {
 			return err
 		}
@@ -81,44 +70,43 @@ func AmITheUpdate(args []string) (bool, error) {
 	return false, nil
 }
 
-func do(URL string) func() error {
-	return func() error {
-		L.Info.Printf("[+] Downloading %s\n", URL)
-		new, err := http.Get(URL)
-		if err != nil {
-			return err
-		}
-		defer new.Body.Close()
-
-		tmp, err := os.CreateTemp("", "*.exe")
-		if err != nil {
-			return err
-		}
-
-		_, err = io.Copy(tmp, new.Body)
-		if err != nil {
-			tmp.Close()
-			return err
-		}
-
-		err = tmp.Chmod(0700)
-		tmp.Close()
-		if err != nil {
-			return err
-		}
-
-		L.Ok.Println("[+] Done. Updating now")
-
-		exe, err := os.Executable()
-		if err != nil {
-			return err
-		}
-		cmd := exec.Command(tmp.Name(), "replace", exe)
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		return cmd.Start()
+func do(URL string) error {
+	L.Info.Printf("[+] Downloading %s\n", URL)
+	new, err := http.Get(URL)
+	if err != nil {
+		return err
 	}
+	defer new.Body.Close()
+
+	tmp, err := os.CreateTemp("", "*.exe")
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(tmp, new.Body)
+	if err != nil {
+		tmp.Close()
+		return err
+	}
+
+	err = tmp.Chmod(0700)
+	tmp.Close()
+	if err != nil {
+		return err
+	}
+
+	L.Ok.Println("[+] Done. Updating now")
+
+	exe, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(tmp.Name(), "replace", exe)
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	return cmd.Start()
+
 }
 
 var (
@@ -129,7 +117,7 @@ const (
 	releaseURL = "https://api.github.com/repos/billy4479/server-tool/releases"
 )
 
-func checkUpdates() (bool, string, error) {
+func CheckUpdates() (bool, string, error) {
 	if Version == "dev" {
 		L.Info.Println("[+] This is a development build, skipping updates.")
 		return false, "", nil

@@ -148,9 +148,7 @@ func EnsureJavaIsInstalled(javaVersion int) (string, error) {
 		return "", err
 	}
 
-	if !C.Application.Quiet {
-		L.Ok.Println("[+] Done!")
-	}
+	L.Ok.Println("[+] Done!")
 
 	return fullExePath, nil
 }

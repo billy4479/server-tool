@@ -1,12 +1,14 @@
-package servertool
+package main
 
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
 
+	st "github.com/billy4479/server-tool"
 	"github.com/fatih/color"
 )
 
@@ -29,7 +31,7 @@ func StringOption(desc string, continueAskingUntil func(string) bool) (string, e
 	}
 
 	for !continueAskingUntil(input) {
-		L.Info.Printf("[?] %s: ", desc)
+		st.L.Info.Printf("[?] %s: ", desc)
 		var err error
 		input, err = readLine()
 		if err != nil {
@@ -67,9 +69,9 @@ func MakeMenu(noDefault bool, options ...Option) (*Option, error) {
 			}
 		}
 		if noDefault {
-			L.Info.Printf("[?] Your option [1-%d]: ", len(options))
+			st.L.Info.Printf("[?] Your option [1-%d]: ", len(options))
 		} else {
-			L.Info.Printf("[?] Your option [0-%d] (default: 0): ", len(options)-1)
+			st.L.Info.Printf("[?] Your option [0-%d] (default: 0): ", len(options)-1)
 		}
 		input, err := readLine()
 		if err != nil {
@@ -84,29 +86,52 @@ func MakeMenu(noDefault bool, options ...Option) (*Option, error) {
 
 			if n >= len(options) || n < 0 {
 				if noDefault {
-					if !C.Application.Quiet {
-						L.Warn.Printf("[!] Option %d was not found.\n", inputN)
-					}
+					st.L.Warn.Printf("[!] Option %d was not found.\n", inputN)
 					continue
 				}
-				if !C.Application.Quiet {
-					L.Warn.Printf("[!] Option %d was not found, falling back on default.\n", inputN)
-				}
+				st.L.Warn.Printf("[!] Option %d was not found, falling back on default.\n", inputN)
 				return &options[0], nil
 			}
 
-			if !C.Application.Quiet {
-				L.Ok.Printf("[+] Option %d selected.\n", inputN)
-			}
 			return &options[n], nil
 		} else if noDefault {
-			L.Warn.Println("[!] Invalid option.")
+			st.L.Warn.Println("[!] Invalid option.")
 		}
 		run = noDefault
 	}
 
-	if !C.Application.Quiet {
-		L.Ok.Printf("[+] Default option selected.\n")
-	}
+	st.L.Ok.Printf("[+] Default option selected.\n")
 	return &options[0], nil
+}
+
+func MakeServersMenuItem(servers []st.Server) []Option {
+	result := []Option{}
+
+	for _, s := range servers {
+		desc := fmt.Sprintf("\"%s\" (", s.Name)
+		if s.Version == nil {
+			desc += "?? on ??"
+		} else {
+			desc += fmt.Sprintf("%s on ", s.Version.ID)
+			switch s.Type {
+			case st.Vanilla:
+				desc += "Vanilla"
+			case st.Fabric:
+				desc += "Fabric"
+			}
+		}
+
+		if s.HasGit {
+			desc += " - Git"
+		}
+
+		desc += ")"
+
+		result = append(result, Option{
+			Description: desc,
+			Action:      s.Start,
+		})
+	}
+
+	return result
 }
