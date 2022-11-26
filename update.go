@@ -13,27 +13,14 @@ import (
 	"github.com/Jeffail/gabs/v2"
 )
 
-func DoUpdateIfNeeded() error {
-	needUpdate, newVersionURL, err := CheckUpdates()
+func DoUpdate(newVersionURL string) error {
+	err := do(newVersionURL)
 	if err != nil {
 		return err
 	}
 
-	if needUpdate {
-		L.Info.Println("[+] A new version as been found!")
-		if err != nil {
-			return err
-		}
-
-		err = do(newVersionURL)
-		if err != nil {
-			return err
-		}
-
-		// Done, just use the new one
-		os.Exit(2)
-	}
-
+	// Done, just use the new one
+	os.Exit(2)
 	return nil
 }
 

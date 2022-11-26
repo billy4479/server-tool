@@ -1,8 +1,8 @@
 GO ?= go
 CONFIG_PATH ?= ./dev-config.yml
 VERSION ?= $(shell git describe --always --tags)
-LDFLAGS ?= -X "github.com/billy4479/server-tool.Version=$(VERSION)"
-RELEASE_LDFLAGS ?= -s -w $(LDFLAGS)
+LDFLAGS ?= 
+RELEASE_LDFLAGS ?= -s -w -X "github.com/billy4479/server-tool.Version=$(VERSION)" $(LDFLAGS)
 OUTPUT_DIR ?= ./build
 
 

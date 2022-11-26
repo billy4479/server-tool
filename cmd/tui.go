@@ -5,11 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 
 	st "github.com/billy4479/server-tool"
 	"github.com/fatih/color"
+	"github.com/skratchdot/open-golang/open"
 )
 
 var inputReader = bufio.NewReader(os.Stdin)
@@ -50,7 +52,7 @@ type Option struct {
 
 var ErrNotEnoughoptions = errors.New("At least one option is required")
 
-func MakeMenu(noDefault bool, options ...Option) (*Option, error) {
+func makeMenu(noDefault bool, options ...Option) (*Option, error) {
 	if len(options) == 0 {
 		return nil, ErrNotEnoughoptions
 	}
@@ -104,7 +106,7 @@ func MakeMenu(noDefault bool, options ...Option) (*Option, error) {
 	return &options[0], nil
 }
 
-func MakeServersMenuItem(servers []st.Server) []Option {
+func makeServersMenuItem(servers []st.Server) []Option {
 	result := []Option{}
 
 	for _, s := range servers {
@@ -134,4 +136,148 @@ func MakeServersMenuItem(servers []st.Server) []Option {
 	}
 
 	return result
+}
+
+func runTui() error {
+	needUpdate, newVersionURL, err := st.CheckUpdates()
+	if err != nil {
+		return err
+	}
+
+	if needUpdate {
+		err = st.DoUpdate(newVersionURL)
+		if err != nil {
+			st.L.Error.Println(err)
+			st.L.Warn.Println("[!] Unable to update! Proceeding anyways...")
+
+			// We don't crash here
+			// err = nil
+		}
+	}
+
+	st.L.Ok.Println("[?] What do we do?")
+	opt, err := makeMenu(false,
+		Option{
+			Description: "Start a server",
+			Action: func() error {
+				servers, err := st.FindServers()
+				if err != nil {
+					return err
+				}
+
+				st.L.Info.Println("[?] The following servers have been found:")
+				c, err := makeMenu(true, makeServersMenuItem(servers)...)
+				if err != nil {
+					return err
+				}
+
+				return c.Action()
+			},
+		},
+		Option{
+			Description: "Create new a server",
+			Action: func() error {
+				versions, err := st.GetVersionInfos()
+				if err != nil {
+					return err
+				}
+
+				s := st.Server{}
+				s.Name, err = StringOption("Enter a name for the new server", nil)
+				if err != nil {
+					return err
+				}
+
+				s.BaseDir = path.Join(st.C.Application.WorkingDir, s.Name)
+
+				versionStr, err := StringOption(
+					"Enter a version for the new server (? to list all versions)",
+					func(s string) bool {
+						if s == "" {
+							return false
+						}
+
+						if s == "?" {
+							for _, v := range versions {
+								fmt.Printf("[+] %s\n", v.ID)
+							}
+							return false
+						}
+
+						for _, v := range versions {
+							if v.ID == s {
+								return true
+							}
+						}
+
+						st.L.Warn.Printf("[!] Version %s was not found. Type ? for a list of the available versions\n", s)
+						return false
+					},
+				)
+
+				if err != nil {
+					return err
+				}
+
+				for _, v := range versions {
+					if v.ID == versionStr {
+						s.Version = &v
+						break
+					}
+				}
+
+				if s.Version == nil {
+					panic("NOT REACHED")
+				}
+
+				err = st.CreateServer(&s)
+				if err != nil {
+					return err
+				}
+				st.L.Ok.Println("[+] Server created successfully!")
+				return nil
+			},
+		},
+		Option{
+			Description: "Open server folder",
+			Action: func() error {
+				return open.Start(st.C.Application.WorkingDir)
+			},
+		},
+		Option{
+			Description: "Open config",
+			Action: func() error {
+				configPath, _, err := st.GetConfigPath()
+				if err != nil {
+					return err
+				}
+				return open.Start(configPath)
+			},
+		},
+		Option{
+			Description: "Open cache folder",
+			Action: func() error {
+				return open.Start(st.C.Application.CacheDir)
+			},
+		},
+		Option{
+			Description: "Quit",
+			Action: func() error {
+				return nil
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if err = opt.Action(); err != nil {
+		return err
+	}
+
+	err = st.WriteConfig()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
