@@ -136,5 +136,7 @@ func WriteConfig() error {
 	}
 	defer f.Close()
 
-	return yaml.NewEncoder(f).Encode(C)
+	encoder := yaml.NewEncoder(f)
+	encoder.SetIndent(2)
+	return encoder.Encode(C)
 }

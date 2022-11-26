@@ -4,6 +4,7 @@ VERSION ?= $(shell git describe --always --tags)
 LDFLAGS ?= -X "github.com/billy4479/server-tool.Version=$(VERSION)"
 RELEASE_LDFLAGS ?= -s -w $(LDFLAGS)
 OUTPUT_DIR ?= ./build
+ARGS ?= 
 
 
 all: build
@@ -16,7 +17,7 @@ build:
 .PHONY: build
 
 run: build
-	CONFIG_PATH=$(CONFIG_PATH) ./$(OUTPUT_DIR)/server-tool
+	CONFIG_PATH=$(CONFIG_PATH) ./$(OUTPUT_DIR)/server-tool $(ARGS)
 
 .PHONY: run
 

@@ -1,7 +1,7 @@
 application:
-  quiet: false
-  workingdir: "./test-dir"
-  cachedir: ""
+  forcetui: false
+  workingdir: ./test-dir
+  cachedir: /home/billy/.cache/server-tool
 minecraft:
   quiet: false
   nogui: true
@@ -17,10 +17,8 @@ java:
 git:
   disable: false
   disablegithubintegration: false
+  uselockfile: true
   overrides:
     enable: false
     customprecommands: []
     custompostcommands: []
-startscript:
-  name: ""
-  disable: false
