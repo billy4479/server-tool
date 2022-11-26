@@ -1,4 +1,4 @@
-package servertool
+package lib
 
 import (
 	"encoding/json"
@@ -36,12 +36,12 @@ type VersionInfo struct {
 }
 
 const (
-	versionManifestURL = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
+	versionManifestURL = "https://launchermeta.mojang.com/mc/game/version_manifelib.json"
 	expireTime         = 24 * time.Hour
 )
 
 func manifestDir() string     { return filepath.Join(C.Application.CacheDir, "manifest") }
-func versionManifest() string { return filepath.Join(manifestDir(), "version_manifest.json") }
+func versionManifest() string { return filepath.Join(manifestDir(), "version_manifelib.json") }
 func versionInfos() string    { return filepath.Join(manifestDir(), "version_infos.json") }
 
 func updateVersionInfos() ([]VersionInfo, error) {

@@ -1,4 +1,4 @@
-package servertool
+package lib
 
 import (
 	"errors"
@@ -23,10 +23,6 @@ func DetectGit() (string, error) {
 	hasGit = true
 	return strings.Split(string(out), " ")[2], nil
 }
-
-const (
-	gitForWindowsURL = "https://api.github.com/repos/git-for-windows/git/releases"
-)
 
 var (
 	ErrGitNotInstalled = errors.New("Git was not installed")

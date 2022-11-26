@@ -1,4 +1,4 @@
-package servertool
+package lib
 
 import (
 	"errors"

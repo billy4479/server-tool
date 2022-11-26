@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"bufio"
@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	st "github.com/billy4479/server-tool"
+	"github.com/billy4479/server-tool/lib"
 	"github.com/fatih/color"
 	"github.com/skratchdot/open-golang/open"
 )
@@ -33,7 +33,7 @@ func StringOption(desc string, continueAskingUntil func(string) bool) (string, e
 	}
 
 	for !continueAskingUntil(input) {
-		st.L.Info.Printf("[?] %s: ", desc)
+		lib.L.Info.Printf("[?] %s: ", desc)
 		var err error
 		input, err = readLine()
 		if err != nil {
@@ -71,9 +71,9 @@ func makeMenu(noDefault bool, options ...Option) (*Option, error) {
 			}
 		}
 		if noDefault {
-			st.L.Info.Printf("[?] Your option [1-%d]: ", len(options))
+			lib.L.Info.Printf("[?] Your option [1-%d]: ", len(options))
 		} else {
-			st.L.Info.Printf("[?] Your option [0-%d] (default: 0): ", len(options)-1)
+			lib.L.Info.Printf("[?] Your option [0-%d] (default: 0): ", len(options)-1)
 		}
 		input, err := readLine()
 		if err != nil {
@@ -88,25 +88,25 @@ func makeMenu(noDefault bool, options ...Option) (*Option, error) {
 
 			if n >= len(options) || n < 0 {
 				if noDefault {
-					st.L.Warn.Printf("[!] Option %d was not found.\n", inputN)
+					lib.L.Warn.Printf("[!] Option %d was not found.\n", inputN)
 					continue
 				}
-				st.L.Warn.Printf("[!] Option %d was not found, falling back on default.\n", inputN)
+				lib.L.Warn.Printf("[!] Option %d was not found, falling back on default.\n", inputN)
 				return &options[0], nil
 			}
 
 			return &options[n], nil
 		} else if noDefault {
-			st.L.Warn.Println("[!] Invalid option.")
+			lib.L.Warn.Println("[!] Invalid option.")
 		}
 		run = noDefault
 	}
 
-	st.L.Ok.Printf("[+] Default option selected.\n")
+	lib.L.Ok.Printf("[+] Default option selected.\n")
 	return &options[0], nil
 }
 
-func makeServersMenuItem(servers []st.Server) []Option {
+func makeServersMenuItem(servers []lib.Server) []Option {
 	result := []Option{}
 
 	for _, s := range servers {
@@ -116,9 +116,9 @@ func makeServersMenuItem(servers []st.Server) []Option {
 		} else {
 			desc += fmt.Sprintf("%s on ", s.Version.ID)
 			switch s.Type {
-			case st.Vanilla:
+			case lib.Vanilla:
 				desc += "Vanilla"
-			case st.Fabric:
+			case lib.Fabric:
 				desc += "Fabric"
 			}
 		}
@@ -139,33 +139,33 @@ func makeServersMenuItem(servers []st.Server) []Option {
 }
 
 func runTui() error {
-	needUpdate, newVersionURL, err := st.CheckUpdates()
+	needUpdate, newVersionURL, err := lib.CheckUpdates()
 	if err != nil {
 		return err
 	}
 
 	if needUpdate {
-		err = st.DoUpdate(newVersionURL)
+		err = lib.DoUpdate(newVersionURL)
 		if err != nil {
-			st.L.Error.Println(err)
-			st.L.Warn.Println("[!] Unable to update! Proceeding anyways...")
+			lib.L.Error.Println(err)
+			lib.L.Warn.Println("[!] Unable to update! Proceeding anyways...")
 
 			// We don't crash here
 			// err = nil
 		}
 	}
 
-	st.L.Ok.Println("[?] What do we do?")
+	lib.L.Ok.Println("[?] What do we do?")
 	opt, err := makeMenu(false,
 		Option{
 			Description: "Start a server",
 			Action: func() error {
-				servers, err := st.FindServers()
+				servers, err := lib.FindServers()
 				if err != nil {
 					return err
 				}
 
-				st.L.Info.Println("[?] The following servers have been found:")
+				lib.L.Info.Println("[?] The following servers have been found:")
 				c, err := makeMenu(true, makeServersMenuItem(servers)...)
 				if err != nil {
 					return err
@@ -177,18 +177,18 @@ func runTui() error {
 		Option{
 			Description: "Create new a server",
 			Action: func() error {
-				versions, err := st.GetVersionInfos()
+				versions, err := lib.GetVersionInfos()
 				if err != nil {
 					return err
 				}
 
-				s := st.Server{}
+				s := lib.Server{}
 				s.Name, err = StringOption("Enter a name for the new server", nil)
 				if err != nil {
 					return err
 				}
 
-				s.BaseDir = path.Join(st.C.Application.WorkingDir, s.Name)
+				s.BaseDir = path.Join(lib.C.Application.WorkingDir, s.Name)
 
 				versionStr, err := StringOption(
 					"Enter a version for the new server (? to list all versions)",
@@ -210,7 +210,7 @@ func runTui() error {
 							}
 						}
 
-						st.L.Warn.Printf("[!] Version %s was not found. Type ? for a list of the available versions\n", s)
+						lib.L.Warn.Printf("[!] Version %s was not found. Type ? for a list of the available versions\n", s)
 						return false
 					},
 				)
@@ -230,24 +230,24 @@ func runTui() error {
 					panic("NOT REACHED")
 				}
 
-				err = st.CreateServer(&s)
+				err = lib.CreateServer(&s)
 				if err != nil {
 					return err
 				}
-				st.L.Ok.Println("[+] Server created successfully!")
+				lib.L.Ok.Println("[+] Server created successfully!")
 				return nil
 			},
 		},
 		Option{
 			Description: "Open server folder",
 			Action: func() error {
-				return open.Start(st.C.Application.WorkingDir)
+				return open.Start(lib.C.Application.WorkingDir)
 			},
 		},
 		Option{
 			Description: "Open config",
 			Action: func() error {
-				configPath, _, err := st.GetConfigPath()
+				configPath, _, err := lib.GetConfigPath()
 				if err != nil {
 					return err
 				}
@@ -257,7 +257,7 @@ func runTui() error {
 		Option{
 			Description: "Open cache folder",
 			Action: func() error {
-				return open.Start(st.C.Application.CacheDir)
+				return open.Start(lib.C.Application.CacheDir)
 			},
 		},
 		Option{
@@ -274,7 +274,7 @@ func runTui() error {
 		return err
 	}
 
-	err = st.WriteConfig()
+	err = lib.WriteConfig()
 	if err != nil {
 		return err
 	}
