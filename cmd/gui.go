@@ -1,12 +1,21 @@
 package cmd
 
 import (
+	"bytes"
+	"crypto/sha256"
 	_ "embed"
+	"io"
+	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/billy4479/server-tool/lib"
 	"github.com/ncruces/zenity"
 )
+
+//go:embed icon.png
+var icon []byte
+var iconHash = sha256.Sum256(icon)
 
 var defaultZenityOptions = []zenity.Option{
 	zenity.Title("Server Tool"),
@@ -100,7 +109,55 @@ func chooseVersion() (*lib.VersionInfo, error) {
 	return chooseVersion()
 }
 
+func setupIcon() error {
+	iconPath := filepath.Join(lib.C.Application.CacheDir, "icon.png")
+
+	writeIcon := func() error {
+		lib.L.Debug.Printf("Writing icon at %s\n", iconPath)
+		f, err := os.Create(iconPath)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		_, err = f.Write(icon)
+		return err
+	}
+
+	f, err := os.Open(iconPath)
+	if err != nil {
+		err = writeIcon()
+		if err != nil {
+			return err
+		}
+	} else {
+		defer f.Close()
+		hasher := sha256.New()
+		_, err := io.Copy(hasher, f)
+		if err != nil {
+			return err
+		}
+		hash := hasher.Sum(nil)
+
+		if !bytes.Equal(hash, iconHash[:]) {
+			f.Close()
+			err := writeIcon()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	defaultZenityOptions = append(defaultZenityOptions, zenity.WindowIcon(iconPath))
+	return nil
+}
+
 func runGui() error {
+
+	if err := setupIcon(); err != nil {
+		return err
+	}
+
 	server, err := chooseServer()
 
 	if err != nil {
