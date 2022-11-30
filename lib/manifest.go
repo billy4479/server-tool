@@ -51,7 +51,7 @@ const (
 	expireTime         = 24 * time.Hour
 )
 
-func manifestPath() string { return filepath.Join(C.Application.CacheDir, "manifest.json") }
+func ManifestPath() string { return filepath.Join(C.Application.CacheDir, "manifest.json") }
 
 func versionTypeStringToEnum(versionType string) (VersionType, error) {
 	switch versionType {
@@ -173,7 +173,7 @@ func updateVersionInfos() ([]VersionInfo, error) {
 		return nil, infos.err
 	}
 
-	manifestFile, err := os.Create(manifestPath())
+	manifestFile, err := os.Create(ManifestPath())
 	if err != nil {
 		return nil, err
 	}
@@ -195,14 +195,14 @@ func updateVersionInfos() ([]VersionInfo, error) {
 }
 
 func GetVersionInfos() ([]VersionInfo, error) {
-	manifestStat, err := os.Stat(manifestPath())
+	manifestStat, err := os.Stat(ManifestPath())
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			L.Info.Println("[+] Version manifests are missing. Dowloading them again...")
 
 			return updateVersionInfos()
 		}
-		L.Error.Printf("[!] Cannot stat %s", manifestPath())
+		L.Error.Printf("[!] Cannot stat %s", ManifestPath())
 		return nil, err
 	}
 
@@ -211,7 +211,7 @@ func GetVersionInfos() ([]VersionInfo, error) {
 		return updateVersionInfos()
 	}
 
-	manifestFile, err := os.Open(manifestPath())
+	manifestFile, err := os.Open(ManifestPath())
 	if err != nil {
 		return nil, err
 	}

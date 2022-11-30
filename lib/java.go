@@ -25,7 +25,7 @@ func javaExeName() string {
 
 const adoptiumApiUrl = "https://api.adoptium.net/v3/assets/latest/%d/hotspot?os=%s&architecture=x64&image_type=jre"
 
-func javaDir() string     { return path.Join(C.Application.CacheDir, "java") }
+func JavaDir() string     { return path.Join(C.Application.CacheDir, "java") }
 func javaExePath() string { return path.Join("bin", javaExeName()) }
 
 func installJava(javaVersion int) error {
@@ -108,7 +108,7 @@ func installJava(javaVersion int) error {
 		}
 	}
 
-	dest := path.Join(javaDir(), fmt.Sprint(javaVersion))
+	dest := path.Join(JavaDir(), fmt.Sprint(javaVersion))
 
 	L.Info.Printf("[+] Extracting %s\n", name)
 	// Windows uses .zip, the rest .tar.gz
@@ -123,14 +123,14 @@ func installJava(javaVersion int) error {
 
 func EnsureJavaIsInstalled(javaVersion int) (string, error) {
 	javaVersionString := fmt.Sprint(javaVersion)
-	err := os.MkdirAll(javaDir(), 0700)
+	err := os.MkdirAll(JavaDir(), 0700)
 	if err != nil {
 		return "", nil
 	}
 
-	fullExePath := path.Join(javaDir(), javaVersionString, javaExePath())
+	fullExePath := path.Join(JavaDir(), javaVersionString, javaExePath())
 
-	entries, err := os.ReadDir(javaDir())
+	entries, err := os.ReadDir(JavaDir())
 	if err != nil {
 		return "", nil
 	}

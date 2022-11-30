@@ -23,6 +23,41 @@ var defaultZenityOptions = []zenity.Option{
 	zenity.Title("Server Tool"),
 }
 
+func moreOptions() error {
+	options := []string{
+		"Open server folder",
+		"Edit config",
+		"Open cache folder",
+		"Wipe manifest cache",
+		"Wipe java cache",
+	}
+	res, err := zenity.List("Advanced options", options, defaultZenityOptions...)
+	if err != nil || len(res) == 0 {
+		return runGui()
+	}
+
+	switch res {
+	case options[0]:
+		return open.Start(lib.C.Application.WorkingDir)
+	case options[1]:
+		{
+			configPath, _, err := lib.GetConfigPath()
+			if err != nil {
+				return err
+			}
+			return open.Start(configPath)
+		}
+	case options[2]:
+		return open.Start(lib.C.Application.CacheDir)
+	case options[3]:
+		return os.RemoveAll(lib.ManifestPath())
+	case options[4]:
+		return os.RemoveAll(lib.JavaDir())
+	}
+
+	return nil
+}
+
 func chooseServer() (*lib.Server, error) {
 	servers, err := lib.FindServers()
 	if err != nil {
@@ -36,10 +71,13 @@ func chooseServer() (*lib.Server, error) {
 		serverNames = append(serverNames, v.PrettyName())
 	}
 
-	res, err := zenity.List("Select a server to start", serverNames, defaultZenityOptions...)
+	res, err := zenity.List("Select a server to start", serverNames, append(defaultZenityOptions, zenity.ExtraButton("More options"))...)
 	lib.L.Debug.Printf("\"%s\", err:%v\n", res, err)
 
 	if err != nil {
+		if err == zenity.ErrExtraButton {
+			return nil, moreOptions()
+		}
 		return nil, nil
 	}
 	if res == createNewStr {
