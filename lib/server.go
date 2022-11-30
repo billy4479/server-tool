@@ -26,13 +26,22 @@ type Server struct {
 	HasGit  bool
 }
 
+func (s *Server) PrettyName() string {
+	versionStr := s.Version.ID
+	if s.Type == Fabric {
+		versionStr += " on Fabric"
+	}
+	if s.HasGit {
+		versionStr += " + Git"
+	}
+	return fmt.Sprintf("%s (%s)", s.Name, versionStr)
+}
+
 const (
 	FabricJarName    = "fabric-server-launch.jar"
 	VanillaJarName   = "server.jar"
 	GitDirectoryName = ".git"
-)
 
-const (
 	minMemFlag = "-Xms%d%s"
 	maxMemFlag = "-Xmx%d%s"
 	noGuiFlag  = "nogui"

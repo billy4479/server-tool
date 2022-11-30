@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	_ "embed"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/billy4479/server-tool/lib"
 	"github.com/ncruces/zenity"
+	"github.com/skratchdot/open-golang/open"
 )
 
 //go:embed icon.png
@@ -31,7 +33,7 @@ func chooseServer() (*lib.Server, error) {
 	serverNames := []string{}
 	serverNames = append(serverNames, createNewStr)
 	for _, v := range servers {
-		serverNames = append(serverNames, v.Name)
+		serverNames = append(serverNames, v.PrettyName())
 	}
 
 	res, err := zenity.List("Select a server to start", serverNames, defaultZenityOptions...)
@@ -47,7 +49,7 @@ func chooseServer() (*lib.Server, error) {
 		return chooseServer()
 	}
 	for _, v := range servers {
-		if v.Name == res {
+		if v.PrettyName() == res {
 			return &v, nil
 		}
 	}
@@ -80,7 +82,7 @@ func createNew() (*lib.Server, error) {
 }
 
 func chooseName() string {
-	name, err := zenity.Entry("Choose a name for the server")
+	name, err := zenity.Entry("Choose a name for the server", defaultZenityOptions...)
 	lib.L.Debug.Printf("\"%s\", err:%v\n", name, err)
 	return name
 }
@@ -96,7 +98,7 @@ func chooseVersion() (*lib.VersionInfo, error) {
 			versionNames = append(versionNames, v.ID)
 		}
 	}
-	res, err := zenity.List("Choose a minecraft version", versionNames, zenity.DisallowEmpty())
+	res, err := zenity.List("Choose a minecraft version", versionNames, defaultZenityOptions...)
 	lib.L.Debug.Printf("\"%s\", err:%v\n", res, err)
 	if err != nil {
 		return nil, nil
@@ -154,6 +156,40 @@ func setupIcon() error {
 	return nil
 }
 
+func serverOptions(s *lib.Server) error {
+	res := zenity.Question(fmt.Sprintf("Server \"%s\" was selected", s.PrettyName()),
+		append(defaultZenityOptions,
+			zenity.OKLabel("Run"),
+			zenity.CancelLabel("Cancel"),
+			zenity.ExtraButton("More options"),
+		)...)
+	switch res {
+	case nil:
+		return s.Start(true)
+	case zenity.ErrCanceled:
+		return res
+	case zenity.ErrExtraButton:
+		{
+			options := []string{"Run", "Open folder", "Install Fabric"}
+			res, err := zenity.List("More options", options, defaultZenityOptions...)
+			if err != nil || len(res) == 0 {
+				return serverOptions(s)
+			}
+			switch res {
+			case options[0]:
+				return s.Start(true)
+			case options[1]:
+				return open.Start(s.BaseDir)
+			case options[2]:
+				_ = zenity.Info("Not yet implemented", defaultZenityOptions...)
+				return nil
+			}
+		}
+	}
+
+	return nil
+}
+
 func runGui() error {
 
 	if err := setupIcon(); err != nil {
@@ -169,5 +205,9 @@ func runGui() error {
 		return nil
 	}
 
-	return server.Start(true)
+	if err = serverOptions(server); err == zenity.ErrCanceled {
+		return runGui()
+	}
+
+	return err
 }
