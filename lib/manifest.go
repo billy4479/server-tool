@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 
@@ -39,6 +40,7 @@ const (
 type VersionInfo struct {
 	ID          string
 	Type        VersionType
+	ReleaseDate time.Time
 	JarURL      string
 	JavaVersion int
 	SHA         string
@@ -90,7 +92,7 @@ func updateVersionInfos() ([]VersionInfo, error) {
 
 	for _, v := range manifest.Versions {
 		infos.wg.Add(1)
-		go func(id, url, versionTypeStr string) {
+		go func(id, url, versionTypeStr, releaseTimeStr string) {
 			defer infos.wg.Done()
 
 			res, err := http.Get(url)
@@ -144,9 +146,15 @@ func updateVersionInfos() ([]VersionInfo, error) {
 				return
 			}
 
+			releaseTime, err := time.Parse(time.RFC3339, releaseTimeStr)
+			if err != nil {
+				return
+			}
+
 			info := VersionInfo{
 				ID:          id,
 				Type:        versionType,
+				ReleaseDate: releaseTime,
 				JarURL:      jarURL,
 				SHA:         sha,
 				JavaVersion: int(javaVersion),
@@ -157,7 +165,7 @@ func updateVersionInfos() ([]VersionInfo, error) {
 			infos.Unlock()
 
 			fmt.Printf("    [+] %s                   \r", id)
-		}(v.ID, v.URL, v.Type)
+		}(v.ID, v.URL, v.Type, v.ReleaseTime)
 	}
 
 	infos.wg.Wait()
@@ -170,6 +178,8 @@ func updateVersionInfos() ([]VersionInfo, error) {
 		return nil, err
 	}
 	defer manifestFile.Close()
+
+	sort.Sort(VerInfos(infos.data))
 
 	encoder := json.NewEncoder(manifestFile)
 	encoder.SetIndent("", "  ")
@@ -214,4 +224,20 @@ func GetVersionInfos() ([]VersionInfo, error) {
 		return updateVersionInfos()
 	}
 	return versionInfos, nil
+}
+
+type VerInfos []VersionInfo
+
+func (v VerInfos) Len() int           { return len(v) }
+func (v VerInfos) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
+func (v VerInfos) Less(i, j int) bool { return v[i].ReleaseDate.Before(v[j].ReleaseDate) }
+
+func GetVersionInfosSorted() ([]VersionInfo, error) {
+	vers, err := GetVersionInfos()
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Sort(sort.Reverse(VerInfos(vers)))
+	return vers, nil
 }

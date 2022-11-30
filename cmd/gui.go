@@ -86,13 +86,15 @@ func chooseName() string {
 }
 
 func chooseVersion() (*lib.VersionInfo, error) {
-	versions, err := lib.GetVersionInfos()
+	versions, err := lib.GetVersionInfosSorted()
 	if err != nil {
 		return nil, err
 	}
 	versionNames := []string{}
 	for _, v := range versions {
-		versionNames = append(versionNames, v.ID)
+		if v.Type == lib.VersionTypeRelease {
+			versionNames = append(versionNames, v.ID)
+		}
 	}
 	res, err := zenity.List("Choose a minecraft version", versionNames, zenity.DisallowEmpty())
 	lib.L.Debug.Printf("\"%s\", err:%v\n", res, err)
