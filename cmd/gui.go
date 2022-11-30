@@ -76,7 +76,11 @@ func chooseServer() (*lib.Server, error) {
 
 	if err != nil {
 		if err == zenity.ErrExtraButton {
-			return nil, moreOptions()
+			err = moreOptions()
+			if err != nil {
+				return nil, err
+			}
+			return chooseServer()
 		}
 		return nil, nil
 	}
@@ -136,8 +140,21 @@ func chooseVersion() (*lib.VersionInfo, error) {
 			versionNames = append(versionNames, v.ID)
 		}
 	}
-	res, err := zenity.List("Choose a minecraft version", versionNames, defaultZenityOptions...)
+	res, err := zenity.List("Choose a minecraft version", versionNames, append(defaultZenityOptions, zenity.ExtraButton("More versions"))...)
 	lib.L.Debug.Printf("\"%s\", err:%v\n", res, err)
+	if err == zenity.ErrExtraButton {
+		ver, err := zenity.Entry("Select a Minecraft version", defaultZenityOptions...)
+		if err != nil {
+			return chooseVersion()
+		}
+
+		for _, v := range versions {
+			if v.ID == ver {
+				return &v, nil
+			}
+		}
+	}
+
 	if err != nil {
 		return nil, nil
 	}
