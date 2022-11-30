@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -28,8 +27,18 @@ type VersionManifestJSON struct {
 	} `json:"versions"`
 }
 
+type VersionType uint8
+
+const (
+	VersionTypeRelease VersionType = iota
+	VersionTypeSnapshot
+	VersionTypeOldBeta
+	VersionTypeOldAlpha
+)
+
 type VersionInfo struct {
 	ID          string
+	Type        VersionType
 	JarURL      string
 	JavaVersion int
 	SHA         string
@@ -40,9 +49,22 @@ const (
 	expireTime         = 24 * time.Hour
 )
 
-func manifestDir() string     { return filepath.Join(C.Application.CacheDir, "manifest") }
-func versionManifest() string { return filepath.Join(manifestDir(), "version_manifelib.json") }
-func versionInfos() string    { return filepath.Join(manifestDir(), "version_infos.json") }
+func manifestPath() string { return filepath.Join(C.Application.CacheDir, "manifest.json") }
+
+func versionTypeStringToEnum(versionType string) (VersionType, error) {
+	switch versionType {
+	case "old_alpha":
+		return VersionTypeOldAlpha, nil
+	case "old_beta":
+		return VersionTypeOldBeta, nil
+	case "release":
+		return VersionTypeRelease, nil
+	case "snapshot":
+		return VersionTypeSnapshot, nil
+	default:
+		return 0, fmt.Errorf("Invalid version type %s", versionType)
+	}
+}
 
 func updateVersionInfos() ([]VersionInfo, error) {
 	res, err := http.Get(versionManifestURL)
@@ -51,14 +73,8 @@ func updateVersionInfos() ([]VersionInfo, error) {
 	}
 	defer res.Body.Close()
 
-	manifestFile, err := os.Create(versionManifest())
-	if err != nil {
-		return nil, err
-	}
-	defer manifestFile.Close()
-
 	manifest := VersionManifestJSON{}
-	err = json.NewDecoder(io.TeeReader(res.Body, manifestFile)).Decode(&manifest)
+	err = json.NewDecoder(res.Body).Decode(&manifest)
 	if err != nil {
 		return nil, err
 	}
@@ -74,9 +90,7 @@ func updateVersionInfos() ([]VersionInfo, error) {
 
 	for _, v := range manifest.Versions {
 		infos.wg.Add(1)
-		id := v.ID
-		url := v.URL
-		go func() {
+		go func(id, url, versionTypeStr string) {
 			defer infos.wg.Done()
 
 			res, err := http.Get(url)
@@ -125,8 +139,14 @@ func updateVersionInfos() ([]VersionInfo, error) {
 				javaVersion = 8
 			}
 
+			versionType, err := versionTypeStringToEnum(versionTypeStr)
+			if err != nil {
+				return
+			}
+
 			info := VersionInfo{
 				ID:          id,
+				Type:        versionType,
 				JarURL:      jarURL,
 				SHA:         sha,
 				JavaVersion: int(javaVersion),
@@ -137,7 +157,7 @@ func updateVersionInfos() ([]VersionInfo, error) {
 			infos.Unlock()
 
 			fmt.Printf("    [+] %s                   \r", id)
-		}()
+		}(v.ID, v.URL, v.Type)
 	}
 
 	infos.wg.Wait()
@@ -145,13 +165,13 @@ func updateVersionInfos() ([]VersionInfo, error) {
 		return nil, infos.err
 	}
 
-	infosFile, err := os.Create(versionInfos())
+	manifestFile, err := os.Create(manifestPath())
 	if err != nil {
 		return nil, err
 	}
-	defer infosFile.Close()
+	defer manifestFile.Close()
 
-	encoder := json.NewEncoder(infosFile)
+	encoder := json.NewEncoder(manifestFile)
 	encoder.SetIndent("", "  ")
 	err = encoder.Encode(infos.data)
 	if err != nil {
@@ -165,18 +185,14 @@ func updateVersionInfos() ([]VersionInfo, error) {
 }
 
 func GetVersionInfos() ([]VersionInfo, error) {
-	err := os.MkdirAll(manifestDir(), 0700)
-	if err != nil {
-		return nil, err
-	}
-	manifestStat, err := os.Stat(versionManifest())
+	manifestStat, err := os.Stat(manifestPath())
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			L.Info.Println("[+] Version manifests are missing. Dowloading them again...")
 
 			return updateVersionInfos()
 		}
-		L.Error.Printf("[!] Cannot stat %s", versionManifest())
+		L.Error.Printf("[!] Cannot stat %s", manifestPath())
 		return nil, err
 	}
 
@@ -185,14 +201,14 @@ func GetVersionInfos() ([]VersionInfo, error) {
 		return updateVersionInfos()
 	}
 
-	infoFile, err := os.Open(versionInfos())
+	manifestFile, err := os.Open(manifestPath())
 	if err != nil {
 		return nil, err
 	}
-	defer infoFile.Close()
+	defer manifestFile.Close()
 
 	versionInfos := []VersionInfo{}
-	err = json.NewDecoder(infoFile).Decode(&versionInfos)
+	err = json.NewDecoder(manifestFile).Decode(&versionInfos)
 	if err != nil {
 		L.Info.Println("[+] Version manifests are corrupted. Dowloading them again...")
 		return updateVersionInfos()
