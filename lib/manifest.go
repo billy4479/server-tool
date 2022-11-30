@@ -36,7 +36,7 @@ type VersionInfo struct {
 }
 
 const (
-	versionManifestURL = "https://launchermeta.mojang.com/mc/game/version_manifelib.json"
+	versionManifestURL = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
 	expireTime         = 24 * time.Hour
 )
 

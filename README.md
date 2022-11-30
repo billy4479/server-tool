@@ -66,8 +66,10 @@ minecraft:
   # Logs can be still found as usual in the logs folder of each server
   quiet: false
 
-  # Passes the `nogui` option to the server disabling the graphical interface
-  nogui: true
+  # Passes the `nogui` option to the server disabling the graphical interface.
+  # This is only used in TUI and CLI mode, in GUI mode this is always 
+  # considered to be true.
+  gui: true
 
   # Disable the automatic EULA agreement for new servers
   noeula: false

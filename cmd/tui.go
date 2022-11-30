@@ -131,7 +131,7 @@ func makeServersMenuItem(servers []lib.Server) []Option {
 
 		result = append(result, Option{
 			Description: desc,
-			Action:      s.Start,
+			Action:      func() error { return s.Start(lib.C.Minecraft.GUI) },
 		})
 	}
 
@@ -271,11 +271,6 @@ func runTui() error {
 		return err
 	}
 	if err = opt.Action(); err != nil {
-		return err
-	}
-
-	err = lib.WriteConfig()
-	if err != nil {
 		return err
 	}
 

@@ -4,7 +4,7 @@ application:
   cachedir: /home/billy/.cache/server-tool
 minecraft:
   quiet: false
-  nogui: true
+  gui: false
   noeula: false
 java:
   executableoverride: ""

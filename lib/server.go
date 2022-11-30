@@ -65,7 +65,7 @@ func ensureJavaPretty(s *Server) (string, error) {
 	return javaExe, nil
 }
 
-func runJar(s *Server) (bool, error) {
+func runJar(s *Server, gui bool) (bool, error) {
 	var err error
 	javaExe := C.Java.ExecutableOverride
 	if javaExe == "" {
@@ -99,7 +99,7 @@ func runJar(s *Server) (bool, error) {
 		panic("HOW DID YOU DO THIS?")
 	}
 
-	if C.Minecraft.NoGUI {
+	if !gui {
 		args = append(args, noGuiFlag)
 	}
 
@@ -118,14 +118,14 @@ func runJar(s *Server) (bool, error) {
 	)
 }
 
-func (s *Server) Start() error {
+func (s *Server) Start(gui bool) error {
 	if s.HasGit && !C.Git.Disable {
 		if err := PreFn(s.BaseDir); err != nil {
 			return err
 		}
 	}
 
-	success, err := runJar(s)
+	success, err := runJar(s, gui)
 	if err != nil {
 		return err
 	}
@@ -191,7 +191,7 @@ func FindServers() ([]Server, error) {
 	}
 
 	if len(servers) == 0 {
-		return servers, errors.New("No server were found!")
+		L.Warn.Println("[!] No server were found")
 	}
 
 	return servers, nil

@@ -96,15 +96,21 @@ func Run() error {
 		}
 	}
 
+	defer func() {
+		if err = lib.WriteConfig(); err != nil {
+			lib.L.Warn.Printf("Error while saving config: %v", err)
+		}
+	}()
+
 	switch uiMode {
 	case TUI:
-		lib.L.Info.Println("[+] Running in TUI mode\n")
+		lib.L.Info.Println("[+] Running in TUI mode")
 		return runTui()
 	case GUI:
-		lib.L.Info.Println("[+] Running in GUI mode\n")
+		lib.L.Info.Println("[+] Running in GUI mode")
 		return runGui()
 	case CLI:
-		lib.L.Info.Println("[+] Running in CLI mode\n")
+		lib.L.Info.Println("[+] Running in CLI mode")
 		return runCli()
 	}
 

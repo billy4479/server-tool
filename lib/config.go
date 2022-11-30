@@ -15,7 +15,7 @@ type Config struct {
 	}
 	Minecraft struct {
 		Quiet  bool
-		NoGUI  bool
+		GUI    bool
 		NoEULA bool
 	}
 	Java struct {
@@ -82,7 +82,7 @@ func NewConfig() *Config {
 	}
 	{
 		c.Minecraft.Quiet = false
-		c.Minecraft.NoGUI = false
+		c.Minecraft.GUI = false
 		c.Minecraft.NoEULA = false
 	}
 	{
