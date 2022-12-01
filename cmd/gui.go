@@ -32,6 +32,7 @@ func moreOptions() error {
 		"Wipe java cache",
 	}
 	res, err := zenity.List("Advanced options", options, defaultZenityOptions...)
+	lib.L.Debug.Printf("[+] zenity: \"%s\", err:%v\n", res, err)
 	if err != nil || len(res) == 0 {
 		return runGui()
 	}
@@ -72,7 +73,7 @@ func chooseServer() (*lib.Server, error) {
 	}
 
 	res, err := zenity.List("Select a server to start", serverNames, append(defaultZenityOptions, zenity.ExtraButton("More options"))...)
-	lib.L.Debug.Printf("\"%s\", err:%v\n", res, err)
+	lib.L.Debug.Printf("[+] zenity: \"%s\", err:%v\n", res, err)
 
 	if err != nil {
 		if err == zenity.ErrExtraButton {
@@ -125,7 +126,7 @@ func createNew() (*lib.Server, error) {
 
 func chooseName() string {
 	name, err := zenity.Entry("Choose a name for the server", defaultZenityOptions...)
-	lib.L.Debug.Printf("\"%s\", err:%v\n", name, err)
+	lib.L.Debug.Printf("[+] zenity: \"%s\", err:%v\n", name, err)
 	return name
 }
 
@@ -141,9 +142,10 @@ func chooseVersion() (*lib.VersionInfo, error) {
 		}
 	}
 	res, err := zenity.List("Choose a minecraft version", versionNames, append(defaultZenityOptions, zenity.ExtraButton("More versions"))...)
-	lib.L.Debug.Printf("\"%s\", err:%v\n", res, err)
+	lib.L.Debug.Printf("[+] zenity: \"%s\", err:%v\n", res, err)
 	if err == zenity.ErrExtraButton {
 		ver, err := zenity.Entry("Select a Minecraft version", defaultZenityOptions...)
+		lib.L.Debug.Printf("[+] zenity: \"%s\", err:%v\n", ver, err)
 		if err != nil {
 			return chooseVersion()
 		}
@@ -218,6 +220,8 @@ func serverOptions(s *lib.Server) error {
 			zenity.CancelLabel("Cancel"),
 			zenity.ExtraButton("More options"),
 		)...)
+	lib.L.Debug.Printf("[+] zenity: %v\n", res)
+
 	switch res {
 	case nil:
 		return s.Start(true)
@@ -227,6 +231,7 @@ func serverOptions(s *lib.Server) error {
 		{
 			options := []string{"Run", "Open folder", "Install Fabric"}
 			res, err := zenity.List("More options", options, defaultZenityOptions...)
+			lib.L.Debug.Printf("[+] zenity: \"%s\", err:%v\n", res, err)
 			if err != nil || len(res) == 0 {
 				return serverOptions(s)
 			}
