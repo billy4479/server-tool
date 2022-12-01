@@ -172,6 +172,7 @@ func FindServers() ([]Server, error) {
 		}
 
 		s.Type = Vanilla
+		isServer := false
 		for _, entry := range entries {
 			if !entry.IsDir() {
 				if entry.Name() == VanillaJarName {
@@ -185,6 +186,7 @@ func FindServers() ([]Server, error) {
 						// server.jar is not a Minecraft server
 						break
 					}
+					isServer = true
 				} else if entry.Name() == FabricJarName {
 					s.Type = Fabric
 				}
@@ -196,7 +198,9 @@ func FindServers() ([]Server, error) {
 		}
 
 		s.Name = e.Name()
-		servers = append(servers, s)
+		if isServer {
+			servers = append(servers, s)
+		}
 	}
 
 	if len(servers) == 0 {
