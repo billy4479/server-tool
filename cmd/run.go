@@ -7,7 +7,6 @@ import (
 	"runtime"
 
 	"github.com/billy4479/server-tool/lib"
-	"github.com/fatih/color"
 )
 
 func makeCacheDir() (err error) {
@@ -26,27 +25,7 @@ func makeCacheDir() (err error) {
 	return nil
 }
 
-type UIMode int
-
-const (
-	GUI UIMode = iota
-	TUI
-	CLI
-)
-
 func Run() error {
-	uiMode := GUI
-
-	defer func() {
-		if runtime.GOOS == "windows" && uiMode == TUI {
-			fmt.Print("Press enter to continue...")
-			fmt.Scanln()
-		}
-	}()
-
-	color.New(color.FgBlue, color.Bold).Println("[*] Server-Tool version", lib.Version)
-
-	fmt.Printf("[+] OS: %s, Arch: %s\n", runtime.GOOS, runtime.GOARCH)
 
 	if (runtime.GOOS != "windows" &&
 		runtime.GOOS != "linux") ||
@@ -73,16 +52,6 @@ func Run() error {
 		lib.L.Ok.Println("[+] Config loaded successfully")
 	}
 
-	if len(os.Args) != 1 {
-		if os.Args[1] == "tui" {
-			uiMode = TUI
-		} else {
-			uiMode = CLI
-		}
-	} else if lib.C.Application.ForceTUI {
-		uiMode = TUI
-	}
-
 	if err := makeCacheDir(); err != nil {
 		return err
 	}
@@ -102,17 +71,5 @@ func Run() error {
 		}
 	}()
 
-	switch uiMode {
-	case TUI:
-		lib.L.Info.Println("[+] Running in TUI mode")
-		return runTui()
-	case GUI:
-		lib.L.Info.Println("[+] Running in GUI mode")
-		return runGui()
-	case CLI:
-		lib.L.Info.Println("[+] Running in CLI mode")
-		return runCli()
-	}
-
-	return nil
+	return runCli()
 }
