@@ -2,98 +2,31 @@ package lib
 
 import (
 	"errors"
-	"io"
 	"net/http"
-	"os"
-	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
 
 	"github.com/Jeffail/gabs/v2"
+	"github.com/minio/selfupdate"
 )
 
 func DoUpdate(newVersionURL string) error {
-	err := do(newVersionURL)
+	resp, err := http.Get(newVersionURL)
 	if err != nil {
 		return err
 	}
-
-	// Done, just use the new one
-	os.Exit(2)
-	return nil
-}
-
-func AmITheUpdate(args []string) (bool, error) {
-	if len(args) == 3 {
-		if args[1] == "replace" {
-			exe, err := os.Executable()
-			if err != nil {
-				return true, err
-			}
-
-			me, err := os.Open(exe)
-			if err != nil {
-				return true, err
-			}
-			defer me.Close()
-
-			old, err := os.Create(args[2])
-			if err != nil {
-				return true, err
-			}
-			defer old.Close()
-
-			_, err = io.Copy(old, me)
-			if err != nil {
-				return true, err
-			}
-
-			// config.C.Application.WorkingDir = filepath.Dir(args[2])
-			return true, nil
+	defer resp.Body.Close()
+	err = selfupdate.Apply(resp.Body, selfupdate.Options{})
+	if err != nil {
+		L.Warn.Printf("[!] Update failed: %v\n", err)
+		if err = selfupdate.RollbackError(err); err != nil {
+			L.Error.Println("[!] Rolling back also failed, you're on your own now")
+			return err
 		}
+		// We return nil here anyways because a failing update shouldn't crash the app
 	}
-
-	return false, nil
-}
-
-func do(URL string) error {
-	L.Info.Printf("[+] Downloading %s\n", URL)
-	new, err := http.Get(URL)
-	if err != nil {
-		return err
-	}
-	defer new.Body.Close()
-
-	tmp, err := os.CreateTemp("", "*.exe")
-	if err != nil {
-		return err
-	}
-
-	_, err = io.Copy(tmp, new.Body)
-	if err != nil {
-		tmp.Close()
-		return err
-	}
-
-	err = tmp.Chmod(0700)
-	tmp.Close()
-	if err != nil {
-		return err
-	}
-
-	L.Ok.Println("[+] Done. Updating now")
-
-	exe, err := os.Executable()
-	if err != nil {
-		return err
-	}
-	cmd := exec.Command(tmp.Name(), "replace", exe)
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	return cmd.Start()
-
+	return nil
 }
 
 var (
@@ -105,7 +38,9 @@ const (
 )
 
 func CheckUpdates() (bool, string, error) {
-	if Version == "dev" {
+
+	// Comment to test updates
+	if Version == "dev" || strings.Contains(Version, "-") {
 		L.Info.Println("[+] This is a development build, skipping updates.")
 		return false, "", nil
 	}
@@ -122,13 +57,15 @@ func CheckUpdates() (bool, string, error) {
 	}
 
 	tagName := j.Children()[0].Search("tag_name").Data().(string)
-	for _, rel := range j.Children()[0].Search("assets").Children() {
-		if strings.Contains(rel.Search("name").Data().(string), runtime.GOOS) {
-			downloadURL := rel.Search("browser_download_url").Data().(string)
+	assets := j.Children()[0].Search("assets")
+	for _, asset := range assets.Children() {
+		if strings.Contains(asset.Search("name").Data().(string), runtime.GOOS) {
+			downloadURL := asset.Search("browser_download_url").Data().(string)
 
-			s := strings.Split(strings.TrimLeft(Version, "v"), "-")
+			s := strings.TrimLeft(Version, "v")
+			// s = strings.Split(s, "-")[0] // Uncomment to test updates
 
-			current, err := strconv.ParseInt(strings.ReplaceAll(s[0], ".", ""), 10, 32)
+			current, err := strconv.ParseInt(strings.ReplaceAll(s, ".", ""), 10, 32)
 			if err != nil {
 				return false, "", err
 			}
@@ -142,7 +79,7 @@ func CheckUpdates() (bool, string, error) {
 				return true, downloadURL, nil
 			}
 
-			// return true, downloadURL, nil
+			// return true, downloadURL, nil // Uncomment to test updates
 			return false, "", nil
 		}
 	}

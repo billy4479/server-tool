@@ -1,7 +1,7 @@
 GO ?= go
 CONFIG_PATH ?= ./dev-config.yml
 VERSION ?= $(shell git describe --always --tags)
-LDFLAGS ?= -X "github.com/billy4479/server-tool.Version=$(VERSION)"
+LDFLAGS ?= -X "github.com/billy4479/server-tool/lib.Version=$(VERSION)"
 RELEASE_LDFLAGS ?= -s -w $(LDFLAGS)
 OUTPUT_DIR ?= ./build
 ARGS ?= 
@@ -17,7 +17,7 @@ build:
 .PHONY: build
 
 run: build
-	CONFIG_PATH=$(CONFIG_PATH) ./$(OUTPUT_DIR)/server-tool $(ARGS)
+	CONFIG_PATH=$(CONFIG_PATH) $(OUTPUT_DIR)/server-tool $(ARGS)
 
 .PHONY: run
 

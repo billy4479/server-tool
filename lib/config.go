@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	Application struct {
-		ForceTUI   bool
+		AutoUpdate bool
 		WorkingDir string
 		CacheDir   string
 	}
@@ -78,7 +78,7 @@ func NewConfig() *Config {
 	{
 		c.Application.WorkingDir = "."
 		c.Application.CacheDir = ""
-		c.Application.ForceTUI = false
+		c.Application.AutoUpdate = true
 	}
 	{
 		c.Minecraft.Quiet = false

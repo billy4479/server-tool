@@ -1,5 +1,5 @@
 application:
-  forcetui: false
+  autoupdate: true
   workingdir: ./test-dir
   cachedir: /home/billy/.cache/server-tool
 minecraft:

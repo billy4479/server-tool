@@ -28,6 +28,14 @@ func runCli() error {
 		Usage: "Run and manage your Minecraft servers. If no command is specified runs in GUI mode",
 		Commands: []*cli.Command{
 			{
+				Name:    "version",
+				Aliases: []string{"v"},
+				Action: func(ctx *cli.Context) error {
+					lib.L.Debug.Printf("server-tool %s\n", lib.Version)
+					return nil
+				},
+			},
+			{
 				Name:  "tui",
 				Usage: "Run in TUI mode",
 				Action: func(ctx *cli.Context) error {

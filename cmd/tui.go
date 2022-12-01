@@ -145,13 +145,32 @@ func runTui() error {
 	}
 
 	if needUpdate {
-		err = lib.DoUpdate(newVersionURL)
-		if err != nil {
-			lib.L.Error.Println(err)
-			lib.L.Warn.Println("[!] Unable to update! Proceeding anyways...")
-
-			// We don't crash here
-			// err = nil
+		lib.L.Ok.Println("[?] An update was found!")
+		if lib.C.Application.AutoUpdate {
+			opt, err := makeMenu(false,
+				Option{
+					Description: "Yes, update now",
+					Action: func() error {
+						return lib.DoUpdate(newVersionURL)
+					},
+				},
+				Option{
+					Description: "No, I'll do it later",
+					Action: func() error {
+						lib.L.Ok.Printf("Update delayed, for a manual update visit %s\n", newVersionURL)
+						return nil
+					},
+				})
+			if err != nil {
+				return err
+			}
+			if err = opt.Action(); err != nil {
+				// Update failed.
+				panic(err)
+			}
+			return fmt.Errorf("Restart the application to apply the update")
+		} else {
+			lib.L.Info.Printf("Automatic updates are disabled, visit %s to download the update\n", newVersionURL)
 		}
 	}
 

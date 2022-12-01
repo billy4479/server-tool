@@ -250,10 +250,40 @@ func serverOptions(s *lib.Server) error {
 	return nil
 }
 
+func checkUpdates() error {
+	needUpdate, newVersionURL, err := lib.CheckUpdates()
+	if err != nil {
+		return err
+	}
+
+	if needUpdate {
+		if lib.C.Application.AutoUpdate {
+			err = zenity.Question("An update was found! Update now?",
+				append(defaultZenityOptions, zenity.OKLabel("Update"), zenity.CancelLabel("I'll do it later"))...)
+
+			if err == nil {
+				if err = lib.DoUpdate(newVersionURL); err != nil {
+					panic(err)
+				}
+				_ = zenity.Info("Restart the application to apply the update")
+				os.Exit(0)
+			}
+		} else {
+			lib.L.Info.Printf("Automatic updates are disabled, visit %s to download the update\n", newVersionURL)
+		}
+	}
+
+	return nil
+}
+
 func runGui() error {
 
 	if err := setupIcon(); err != nil {
 		return err
+	}
+
+	if err := checkUpdates(); err != nil {
+		lib.L.Warn.Printf("[!] An error has occurred while checking for updates: %v", err)
 	}
 
 	server, err := chooseServer()

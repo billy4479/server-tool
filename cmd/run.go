@@ -33,16 +33,7 @@ func Run() error {
 		return fmt.Errorf("[!] Your OS is not supported!")
 	}
 
-	needRestart, err := lib.AmITheUpdate(os.Args)
-	if err != nil {
-		return err
-	}
-	if needRestart {
-		lib.L.Ok.Println("[+] Update was successful, restart the application.")
-		return nil
-	}
-
-	err = lib.LoadConfig()
+	err := lib.LoadConfig()
 	if err != nil {
 		lib.L.Warn.Println("[!] An error has occurred while loading the config file. Falling back on the default...")
 		if err = lib.WriteConfig(); err != nil {
