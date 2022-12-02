@@ -57,6 +57,8 @@ func installJava(javaVersion int) error {
 		return errors.New("Unable to find needed variables in JSON response")
 	}
 
+	relName += "-jre"
+
 	L.Info.Printf("[+] Downloading %s (%s)\n", name, humanize.Bytes(size))
 
 	res, err = http.Get(url)
