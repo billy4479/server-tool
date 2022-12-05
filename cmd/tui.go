@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/billy4479/server-tool/lib"
+	"github.com/dustin/go-humanize"
 	"github.com/fatih/color"
 	"github.com/skratchdot/open-golang/open"
 )
@@ -132,7 +133,7 @@ func makeServersMenuItem(servers []lib.Server) []Option {
 
 		result = append(result, Option{
 			Description: desc,
-			Action:      func() error { return s.Start(lib.C.Minecraft.GUI) },
+			Action:      func() error { return s.Start(lib.C.Minecraft.GUI, &javaDownloadProgressTUI{}) },
 		})
 	}
 
@@ -158,21 +159,51 @@ func (p *manifestProgressTUI) SetTotal(total int) {
 	p.Unlock()
 }
 
+const RESET_LINE = "\r\033[K"
+
 func (p *manifestProgressTUI) Add(id string) {
 	p.Lock()
 	p.current++
-	fmt.Printf("    [%d/%d] %s                   \r", p.current, p.total, id)
+	fmt.Printf("%s    [%d/%d] %s", RESET_LINE, p.current, p.total, id)
 	p.Unlock()
 }
 
 func (p *manifestProgressTUI) Done() {
 	p.Lock()
-	fmt.Printf("    [%d/%d] Done!                   \n", p.current, p.total)
+	fmt.Printf("%s    [%d/%d] Done!\n", RESET_LINE, p.current, p.total)
 	p.Unlock()
 }
 
-func (p *manifestProgressTUI) SetCancel(func()) {
-	// Nothing, in TUI mode this cannot be cancelled
+type javaDownloadProgressTUI struct {
+	total   string
+	current uint64
+	name    string
+}
+
+func (p *javaDownloadProgressTUI) OnDownloadStart(size uint64, name string) {
+	p.total = humanize.Bytes(size)
+	p.name = name
+}
+
+func (p *javaDownloadProgressTUI) OnDownloadProgress(n int64) {
+	p.current += uint64(n)
+	lib.L.Info.Printf("%s[+] Downloading %s (%s/%s)", RESET_LINE, p.name, humanize.Bytes(p.current), p.total)
+}
+
+func (p *javaDownloadProgressTUI) OnDownloadFinish() {
+	lib.L.Ok.Printf("%s[+] %s Downloaded (%s)\n", RESET_LINE, p.name, humanize.Bytes(p.current))
+}
+
+func (p *javaDownloadProgressTUI) OnExtractionStart(name string) {
+	p.name = name
+}
+
+func (p *javaDownloadProgressTUI) OnExtractionProgress(name string) {
+	lib.L.Info.Printf("%s[+] Extracting %s (%s)", RESET_LINE, p.name, name)
+}
+
+func (p *javaDownloadProgressTUI) OnExtractionDone() {
+	lib.L.Ok.Printf("%s[+] %s extracted successfully\n", RESET_LINE, p.name)
 }
 
 func runTui() error {

@@ -17,16 +17,21 @@ const (
 	CLI
 )
 
-type manifestProgressDummy struct{}
+type manifestProgressCLI struct{}
 
-func (*manifestProgressDummy) SetTotal(int)     {}
-func (*manifestProgressDummy) Add(string)       {}
-func (*manifestProgressDummy) Done()            {}
-func (*manifestProgressDummy) SetCancel(func()) {}
+func (*manifestProgressCLI) SetTotal(int)     {}
+func (*manifestProgressCLI) Add(string)       {}
+func (*manifestProgressCLI) Done()            {}
+func (*manifestProgressCLI) SetCancel(func()) {}
 
-func newManifestProgressDummy() *manifestProgressDummy {
-	return &manifestProgressDummy{}
-}
+type javaDownloadProgressCLI struct{}
+
+func (p *javaDownloadProgressCLI) OnDownloadStart(size uint64, name string) {}
+func (p *javaDownloadProgressCLI) OnDownloadProgress(n int64)               {}
+func (p *javaDownloadProgressCLI) OnDownloadFinish()                        {}
+func (p *javaDownloadProgressCLI) OnExtractionStart(name string)            {}
+func (p *javaDownloadProgressCLI) OnExtractionProgress(name string)         {}
+func (p *javaDownloadProgressCLI) OnExtractionDone()                        {}
 
 func runCli() error {
 	app := cli.App{
@@ -64,7 +69,7 @@ func runCli() error {
 				Aliases: []string{"l"},
 				Usage:   "List available servers",
 				Action: func(ctx *cli.Context) error {
-					servers, err := lib.FindServers(newManifestProgressDummy())
+					servers, err := lib.FindServers(&manifestProgressCLI{})
 					if err != nil {
 						return err
 					}
@@ -87,7 +92,7 @@ func runCli() error {
 				},
 				Usage: "Run a server",
 				Action: func(ctx *cli.Context) error {
-					servers, err := lib.FindServers(newManifestProgressDummy())
+					servers, err := lib.FindServers(&manifestProgressCLI{})
 					if err != nil {
 						return err
 					}
@@ -95,7 +100,7 @@ func runCli() error {
 					name := ctx.String("name")
 					for _, s := range servers {
 						if s.Name == name {
-							return s.Start(false)
+							return s.Start(false, &javaDownloadProgressCLI{})
 						}
 					}
 					return fmt.Errorf("Server %s not found", name)

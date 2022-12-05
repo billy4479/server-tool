@@ -13,7 +13,6 @@ import (
 	"runtime"
 
 	"github.com/Jeffail/gabs/v2"
-	"github.com/dustin/go-humanize"
 )
 
 func javaExeName() string {
@@ -28,7 +27,27 @@ const adoptiumApiUrl = "https://api.adoptium.net/v3/assets/latest/%d/hotspot?os=
 func JavaDir() string     { return path.Join(C.Application.CacheDir, "java") }
 func javaExePath() string { return path.Join("bin", javaExeName()) }
 
-func installJava(javaVersion int) error {
+type JavaDownloadProgress interface {
+	OnDownloadStart(size uint64, name string)
+	OnDownloadProgress(n int64)
+	OnDownloadFinish()
+	OnExtractionStart(name string)
+	OnExtractionProgress(name string)
+	OnExtractionDone()
+}
+
+type progressReader struct {
+	io.Reader
+	Reporter func(r int64)
+}
+
+func (pr *progressReader) Read(p []byte) (n int, err error) {
+	n, err = pr.Reader.Read(p)
+	pr.Reporter(int64(n))
+	return
+}
+
+func installJava(javaVersion int, progress JavaDownloadProgress) error {
 	res, err := http.Get(fmt.Sprintf(adoptiumApiUrl, javaVersion, runtime.GOOS))
 	if err != nil {
 		return err
@@ -59,7 +78,7 @@ func installJava(javaVersion int) error {
 
 	relName += "-jre"
 
-	L.Info.Printf("[+] Downloading %s (%s)\n", name, humanize.Bytes(size))
+	progress.OnDownloadStart(size, name)
 
 	res, err = http.Get(url)
 	if err != nil {
@@ -78,7 +97,11 @@ func installJava(javaVersion int) error {
 		tmp.Close()
 	}()
 
-	_, err = io.Copy(tmp, res.Body)
+	pr := &progressReader{
+		res.Body,
+		progress.OnDownloadProgress,
+	}
+	_, err = io.Copy(tmp, pr)
 	if err != nil {
 		return err
 	}
@@ -109,21 +132,28 @@ func installJava(javaVersion int) error {
 			return err
 		}
 	}
+	progress.OnDownloadFinish()
 
 	dest := path.Join(JavaDir(), fmt.Sprint(javaVersion))
 
-	L.Info.Printf("[+] Extracting %s\n", name)
+	progress.OnExtractionStart(name)
+
 	// Windows uses .zip, the rest .tar.gz
 	if runtime.GOOS == "windows" {
-		err = Unzip(tmp, res.ContentLength, dest, relName)
+		err = Unzip(tmp, res.ContentLength, dest, relName, progress.OnExtractionProgress)
 	} else {
-		err = Untargz(tmp, dest, relName)
+		err = Untargz(tmp, dest, relName, progress.OnExtractionProgress)
 	}
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	progress.OnExtractionDone()
+	return nil
 }
 
-func EnsureJavaIsInstalled(javaVersion int) (string, error) {
+func EnsureJavaIsInstalled(javaVersion int, progress JavaDownloadProgress) (string, error) {
 	javaVersionString := fmt.Sprint(javaVersion)
 	err := os.MkdirAll(JavaDir(), 0700)
 	if err != nil {
@@ -143,7 +173,7 @@ func EnsureJavaIsInstalled(javaVersion int) (string, error) {
 	}
 
 	L.Warn.Printf("[!] Java %d not found! Downloading it now...\n", javaVersion)
-	err = installJava(javaVersion)
+	err = installJava(javaVersion, progress)
 	if err != nil {
 		L.Error.Printf("[!] An error occurred while downloading Java version %d\n", javaVersion)
 		L.Info.Println(err)

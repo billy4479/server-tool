@@ -72,7 +72,6 @@ type ManifestDownloadProgress interface {
 	SetTotal(int)
 	Add(string)
 	Done()
-	SetCancel(func())
 }
 
 func updateVersionInfos(progress ManifestDownloadProgress) ([]VersionInfo, error) {
@@ -98,14 +97,8 @@ func updateVersionInfos(progress ManifestDownloadProgress) ([]VersionInfo, error
 	infos.data = []VersionInfo{}
 
 	progress.SetTotal(len(manifest.Versions))
-	stop := false
-	progress.SetCancel(func() { stop = true })
 
 	for _, v := range manifest.Versions {
-		if stop {
-			break
-		}
-
 		infos.wg.Add(1)
 		go func(id, url, versionTypeStr, releaseTimeStr string) {
 			defer infos.wg.Done()

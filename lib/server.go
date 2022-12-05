@@ -64,9 +64,9 @@ var (
 	}
 )
 
-func ensureJavaPretty(s *Server) (string, error) {
+func ensureJavaPretty(s *Server, progress JavaDownloadProgress) (string, error) {
 	L.Info.Printf("[+] \"%s\" requires Java %d\n", s.Name, s.Version.JavaVersion)
-	javaExe, err := EnsureJavaIsInstalled(s.Version.JavaVersion)
+	javaExe, err := EnsureJavaIsInstalled(s.Version.JavaVersion, progress)
 	if err != nil {
 		return "", err
 	}
@@ -74,11 +74,11 @@ func ensureJavaPretty(s *Server) (string, error) {
 	return javaExe, nil
 }
 
-func runJar(s *Server, gui bool) (bool, error) {
+func runJar(s *Server, gui bool, progress JavaDownloadProgress) (bool, error) {
 	var err error
 	javaExe := C.Java.ExecutableOverride
 	if javaExe == "" {
-		javaExe, err = ensureJavaPretty(s)
+		javaExe, err = ensureJavaPretty(s, progress)
 		if err != nil {
 			return false, err
 		}
@@ -127,14 +127,14 @@ func runJar(s *Server, gui bool) (bool, error) {
 	)
 }
 
-func (s *Server) Start(gui bool) error {
+func (s *Server) Start(gui bool, progress JavaDownloadProgress) error {
 	if s.HasGit && !C.Git.Disable {
 		if err := PreFn(s.BaseDir); err != nil {
 			return err
 		}
 	}
 
-	success, err := runJar(s, gui)
+	success, err := runJar(s, gui, progress)
 	if err != nil {
 		return err
 	}

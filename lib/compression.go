@@ -24,7 +24,7 @@ func checkIllegalPath(dest, name string) error {
 }
 
 // Thanks to https://stackoverflow.com/questions/28249782/is-it-possible-to-extract-a-tar-xz-package-in-golang
-func Untargz(input io.Reader, dest string, skipName string) error {
+func Untargz(input io.Reader, dest string, skipName string, onExtractionProgress func(string)) error {
 
 	// Create an gz Reader
 	r, err := gzip.NewReader(input)
@@ -74,6 +74,8 @@ func Untargz(input io.Reader, dest string, skipName string) error {
 			if err != nil {
 				return err
 			}
+
+			onExtractionProgress(header.Name)
 		}
 	}
 
@@ -81,7 +83,7 @@ func Untargz(input io.Reader, dest string, skipName string) error {
 }
 
 // Thanks to https://golangcode.com/unzip-files-in-go/
-func Unzip(input io.ReaderAt, size int64, dest string, skipName string) error {
+func Unzip(input io.ReaderAt, size int64, dest string, skipName string, onExtractionProgress func(string)) error {
 	r, err := zip.NewReader(input, size)
 	if err != nil {
 		return err
@@ -130,6 +132,8 @@ func Unzip(input io.ReaderAt, size int64, dest string, skipName string) error {
 		if err != nil {
 			return err
 		}
+
+		onExtractionProgress(f.Name)
 	}
 
 	return nil

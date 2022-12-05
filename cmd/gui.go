@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/billy4479/server-tool/lib"
+	"github.com/dustin/go-humanize"
 	"github.com/ncruces/zenity"
 	"github.com/skratchdot/open-golang/open"
 )
@@ -65,18 +66,8 @@ type manifestProgressGUI struct {
 	total   int
 	current int
 	dialog  zenity.ProgressDialog
-	cancel  func()
 
 	sync.Mutex
-}
-
-func newManifestProgressGUI() *manifestProgressGUI {
-
-	return &manifestProgressGUI{
-		total:   0,
-		current: 0,
-		dialog:  nil, // This cannot be set without knowing the total
-	}
 }
 
 func (p *manifestProgressGUI) SetTotal(total int) {
@@ -84,7 +75,7 @@ func (p *manifestProgressGUI) SetTotal(total int) {
 	defer p.Unlock()
 
 	p.total = total
-	dialog, err := zenity.Progress(append(defaultZenityOptions, zenity.MaxValue(total))...)
+	dialog, err := zenity.Progress(append(defaultZenityOptions, zenity.MaxValue(total), zenity.NoCancel())...)
 
 	if err != nil {
 		panic(err)
@@ -98,30 +89,35 @@ func (p *manifestProgressGUI) Add(name string) {
 	defer p.Unlock()
 
 	p.current++
-	if err := p.dialog.Value(p.current); err != nil {
-		p.cancel()
+	err := p.dialog.Value(p.current)
+	if err != nil {
 		return
 	}
-	p.dialog.Text(name)
+	err = p.dialog.Text(name)
+	if err != nil {
+		return
+	}
 }
 
 func (p *manifestProgressGUI) Done() {
 	p.Lock()
 	defer p.Unlock()
 
-	p.dialog.Text("Done!")
-	p.dialog.Complete()
+	err := p.dialog.Text("Done!")
+	if err != nil {
+		return
+	}
+	err = p.dialog.Complete()
+	if err != nil {
+		return
+	}
 
 	time.Sleep(100 * time.Millisecond)
 	p.dialog.Close()
 }
 
-func (p *manifestProgressGUI) SetCancel(cancel func()) {
-	p.cancel = cancel
-}
-
 func chooseServer() (*lib.Server, error) {
-	servers, err := lib.FindServers(newManifestProgressGUI())
+	servers, err := lib.FindServers(&manifestProgressGUI{})
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +188,7 @@ func chooseName() string {
 }
 
 func chooseVersion() (*lib.VersionInfo, error) {
-	versions, err := lib.GetVersionInfosSorted(newManifestProgressGUI())
+	versions, err := lib.GetVersionInfosSorted(&manifestProgressGUI{})
 	if err != nil {
 		return nil, err
 	}
@@ -274,6 +270,66 @@ func setupIcon() error {
 	return nil
 }
 
+type javaDownloadProgressGUI struct {
+	total   string
+	current uint64
+	name    string
+	dialog  zenity.ProgressDialog
+}
+
+func (p *javaDownloadProgressGUI) OnDownloadStart(size uint64, name string) {
+	p.total = humanize.Bytes(size)
+	p.name = name
+	var err error
+	p.dialog, err = zenity.Progress(append(defaultZenityOptions, zenity.MaxValue(int(size)), zenity.NoCancel())...)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (p *javaDownloadProgressGUI) OnDownloadProgress(n int64) {
+	p.current += uint64(n)
+
+	err := p.dialog.Value(int(p.current))
+	if err != nil {
+		return
+	}
+
+	err = p.dialog.Text(fmt.Sprintf("Downloading %s (%s/%s)", p.name, humanize.Bytes(p.current), p.total))
+	if err != nil {
+		return
+	}
+}
+
+func (p *javaDownloadProgressGUI) OnDownloadFinish() {
+	if err := p.dialog.Complete(); err != nil {
+		return
+	}
+	p.dialog.Close()
+}
+
+func (p *javaDownloadProgressGUI) OnExtractionStart(name string) {
+	p.name = name
+	var err error
+	p.dialog, err = zenity.Progress(append(defaultZenityOptions, zenity.Pulsate(), zenity.NoCancel())...)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (p *javaDownloadProgressGUI) OnExtractionProgress(name string) {
+	if err := p.dialog.Text(fmt.Sprintf("Extracting %s", name)); err != nil {
+		return
+	}
+}
+
+func (p *javaDownloadProgressGUI) OnExtractionDone() {
+	if err := p.dialog.Complete(); err != nil {
+		return
+	}
+	p.dialog.Close()
+}
+
 func serverOptions(s *lib.Server) error {
 	res := zenity.Question(fmt.Sprintf("Server \"%s\" was selected", s.PrettyName()),
 		append(defaultZenityOptions,
@@ -285,7 +341,7 @@ func serverOptions(s *lib.Server) error {
 
 	switch res {
 	case nil:
-		return s.Start(true)
+		return s.Start(true, &javaDownloadProgressGUI{})
 	case zenity.ErrCanceled:
 		return res
 	case zenity.ErrExtraButton:
@@ -298,7 +354,7 @@ func serverOptions(s *lib.Server) error {
 			}
 			switch res {
 			case options[0]:
-				return s.Start(true)
+				return s.Start(true, &javaDownloadProgressGUI{})
 			case options[1]:
 				return open.Start(s.BaseDir)
 			case options[2]:
