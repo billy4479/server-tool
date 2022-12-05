@@ -34,7 +34,7 @@ var (
 )
 
 const (
-	releaseURL = "https://api.github.com/repos/billy4479/server-tool/releases"
+	releaseURL = "https://api.github.com/repos/billy4479/server-tool/releases/latest"
 )
 
 func CheckUpdates() (bool, string, error) {
@@ -56,8 +56,8 @@ func CheckUpdates() (bool, string, error) {
 		return false, "", err
 	}
 
-	tagName := j.Children()[0].Search("tag_name").Data().(string)
-	assets := j.Children()[0].Search("assets")
+	tagName := j.Search("tag_name").Data().(string)
+	assets := j.Search("assets")
 	for _, asset := range assets.Children() {
 		if strings.Contains(asset.Search("name").Data().(string), runtime.GOOS) {
 			downloadURL := asset.Search("browser_download_url").Data().(string)
