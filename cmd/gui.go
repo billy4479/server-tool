@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/billy4479/server-tool/lib"
 	"github.com/ncruces/zenity"
@@ -110,7 +111,9 @@ func (p *manifestProgressGUI) Done() {
 
 	p.dialog.Text("Done!")
 	p.dialog.Complete()
-	<-p.dialog.Done()
+
+	time.Sleep(100 * time.Millisecond)
+	p.dialog.Close()
 }
 
 func (p *manifestProgressGUI) SetCancel(cancel func()) {
