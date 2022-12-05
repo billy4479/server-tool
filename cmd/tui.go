@@ -8,6 +8,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/billy4479/server-tool/lib"
 	"github.com/fatih/color"
@@ -138,6 +139,42 @@ func makeServersMenuItem(servers []lib.Server) []Option {
 	return result
 }
 
+type manifestProgressTUI struct {
+	total   int
+	current int
+	sync.Mutex
+}
+
+func newManifestProgressTUI() *manifestProgressTUI {
+	return &manifestProgressTUI{
+		total:   0,
+		current: 0,
+	}
+}
+
+func (p *manifestProgressTUI) SetTotal(total int) {
+	p.Lock()
+	p.total = total
+	p.Unlock()
+}
+
+func (p *manifestProgressTUI) Add(id string) {
+	p.Lock()
+	p.current++
+	fmt.Printf("    [%d/%d] %s                   \r", p.current, p.total, id)
+	p.Unlock()
+}
+
+func (p *manifestProgressTUI) Done() {
+	p.Lock()
+	fmt.Printf("    [%d/%d] Done!                   \n", p.current, p.total)
+	p.Unlock()
+}
+
+func (p *manifestProgressTUI) SetCancel(func()) {
+	// Nothing, in TUI mode this cannot be cancelled
+}
+
 func runTui() error {
 	needUpdate, newVersionURL, err := lib.CheckUpdates()
 	if err != nil {
@@ -179,7 +216,7 @@ func runTui() error {
 		Option{
 			Description: "Start a server",
 			Action: func() error {
-				servers, err := lib.FindServers()
+				servers, err := lib.FindServers(newManifestProgressTUI())
 				if err != nil {
 					return err
 				}
@@ -196,7 +233,7 @@ func runTui() error {
 		Option{
 			Description: "Create new a server",
 			Action: func() error {
-				versions, err := lib.GetVersionInfos()
+				versions, err := lib.GetVersionInfos(newManifestProgressTUI())
 				if err != nil {
 					return err
 				}

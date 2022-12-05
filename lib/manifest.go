@@ -68,7 +68,14 @@ func versionTypeStringToEnum(versionType string) (VersionType, error) {
 	}
 }
 
-func updateVersionInfos() ([]VersionInfo, error) {
+type ManifestDownloadProgress interface {
+	SetTotal(int)
+	Add(string)
+	Done()
+	SetCancel(func())
+}
+
+func updateVersionInfos(progress ManifestDownloadProgress) ([]VersionInfo, error) {
 	res, err := http.Get(versionManifestURL)
 	if err != nil {
 		return nil, err
@@ -90,7 +97,15 @@ func updateVersionInfos() ([]VersionInfo, error) {
 
 	infos.data = []VersionInfo{}
 
+	progress.SetTotal(len(manifest.Versions))
+	stop := false
+	progress.SetCancel(func() { stop = true })
+
 	for _, v := range manifest.Versions {
+		if stop {
+			break
+		}
+
 		infos.wg.Add(1)
 		go func(id, url, versionTypeStr, releaseTimeStr string) {
 			defer infos.wg.Done()
@@ -124,6 +139,8 @@ func updateVersionInfos() ([]VersionInfo, error) {
 			jarURL, okJar := dl.Search("url").Data().(string)
 			sha, okSha := dl.Search("sha1").Data().(string)
 			javaVersion, okVersion := j.Search("javaVersion", "majorVersion").Data().(float64)
+
+			progress.Add(id)
 
 			if !okJar {
 				// Not all of the old versions had multiplayer builtin
@@ -163,8 +180,6 @@ func updateVersionInfos() ([]VersionInfo, error) {
 			infos.Lock()
 			infos.data = append(infos.data, info)
 			infos.Unlock()
-
-			fmt.Printf("    [+] %s                   \r", id)
 		}(v.ID, v.URL, v.Type, v.ReleaseTime)
 	}
 
@@ -188,19 +203,18 @@ func updateVersionInfos() ([]VersionInfo, error) {
 		return nil, err
 	}
 
-	// TODO: Find a better way...
-	L.Ok.Println("[+] Done                      ")
+	progress.Done()
 
 	return infos.data, nil
 }
 
-func GetVersionInfos() ([]VersionInfo, error) {
+func GetVersionInfos(progress ManifestDownloadProgress) ([]VersionInfo, error) {
 	manifestStat, err := os.Stat(ManifestPath())
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			L.Info.Println("[+] Version manifests are missing. Dowloading them again...")
 
-			return updateVersionInfos()
+			return updateVersionInfos(progress)
 		}
 		L.Error.Printf("[!] Cannot stat %s", ManifestPath())
 		return nil, err
@@ -208,7 +222,7 @@ func GetVersionInfos() ([]VersionInfo, error) {
 
 	if manifestStat.ModTime().Add(expireTime).Before(time.Now()) {
 		L.Info.Println("[+] Version manifests are expired. Dowloading them again...")
-		return updateVersionInfos()
+		return updateVersionInfos(progress)
 	}
 
 	manifestFile, err := os.Open(ManifestPath())
@@ -221,7 +235,7 @@ func GetVersionInfos() ([]VersionInfo, error) {
 	err = json.NewDecoder(manifestFile).Decode(&versionInfos)
 	if err != nil {
 		L.Info.Println("[+] Version manifests are corrupted. Dowloading them again...")
-		return updateVersionInfos()
+		return updateVersionInfos(progress)
 	}
 	return versionInfos, nil
 }
@@ -232,8 +246,8 @@ func (v VerInfos) Len() int           { return len(v) }
 func (v VerInfos) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
 func (v VerInfos) Less(i, j int) bool { return v[i].ReleaseDate.Before(v[j].ReleaseDate) }
 
-func GetVersionInfosSorted() ([]VersionInfo, error) {
-	vers, err := GetVersionInfos()
+func GetVersionInfosSorted(progress ManifestDownloadProgress) ([]VersionInfo, error) {
+	vers, err := GetVersionInfos(progress)
 	if err != nil {
 		return nil, err
 	}

@@ -17,6 +17,17 @@ const (
 	CLI
 )
 
+type manifestProgressDummy struct{}
+
+func (*manifestProgressDummy) SetTotal(int)     {}
+func (*manifestProgressDummy) Add(string)       {}
+func (*manifestProgressDummy) Done()            {}
+func (*manifestProgressDummy) SetCancel(func()) {}
+
+func newManifestProgressDummy() *manifestProgressDummy {
+	return &manifestProgressDummy{}
+}
+
 func runCli() error {
 	app := cli.App{
 		Name:    "Server Tool",
@@ -53,7 +64,7 @@ func runCli() error {
 				Aliases: []string{"l"},
 				Usage:   "List available servers",
 				Action: func(ctx *cli.Context) error {
-					servers, err := lib.FindServers()
+					servers, err := lib.FindServers(newManifestProgressDummy())
 					if err != nil {
 						return err
 					}
@@ -76,7 +87,7 @@ func runCli() error {
 				},
 				Usage: "Run a server",
 				Action: func(ctx *cli.Context) error {
-					servers, err := lib.FindServers()
+					servers, err := lib.FindServers(newManifestProgressDummy())
 					if err != nil {
 						return err
 					}

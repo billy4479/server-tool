@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sync"
 
 	"github.com/billy4479/server-tool/lib"
 	"github.com/ncruces/zenity"
@@ -59,8 +60,65 @@ func moreOptions() error {
 	return nil
 }
 
+type manifestProgressGUI struct {
+	total   int
+	current int
+	dialog  zenity.ProgressDialog
+	cancel  func()
+
+	sync.Mutex
+}
+
+func newManifestProgressGUI() *manifestProgressGUI {
+
+	return &manifestProgressGUI{
+		total:   0,
+		current: 0,
+		dialog:  nil, // This cannot be set without knowing the total
+	}
+}
+
+func (p *manifestProgressGUI) SetTotal(total int) {
+	p.Lock()
+	defer p.Unlock()
+
+	p.total = total
+	dialog, err := zenity.Progress(append(defaultZenityOptions, zenity.MaxValue(total))...)
+
+	if err != nil {
+		panic(err)
+	}
+
+	p.dialog = dialog
+}
+
+func (p *manifestProgressGUI) Add(name string) {
+	p.Lock()
+	defer p.Unlock()
+
+	p.current++
+	if err := p.dialog.Value(p.current); err != nil {
+		p.cancel()
+		return
+	}
+	p.dialog.Text(name)
+}
+
+func (p *manifestProgressGUI) Done() {
+	p.Lock()
+	defer p.Unlock()
+
+	p.dialog.Text("Done!")
+	p.dialog.Complete()
+	<-p.dialog.Done()
+}
+
+func (p *manifestProgressGUI) SetCancel(cancel func()) {
+	p.cancel = cancel
+}
+
 func chooseServer() (*lib.Server, error) {
-	servers, err := lib.FindServers()
+	servers, err := lib.FindServers(newManifestProgressGUI())
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +189,7 @@ func chooseName() string {
 }
 
 func chooseVersion() (*lib.VersionInfo, error) {
-	versions, err := lib.GetVersionInfosSorted()
+	versions, err := lib.GetVersionInfosSorted(newManifestProgressGUI())
 	if err != nil {
 		return nil, err
 	}

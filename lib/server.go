@@ -150,7 +150,7 @@ func (s *Server) Start(gui bool) error {
 	return nil
 }
 
-func FindServers() ([]Server, error) {
+func FindServers(progress ManifestDownloadProgress) ([]Server, error) {
 	serverDirs, err := os.ReadDir(C.Application.WorkingDir)
 	if err != nil {
 		return nil, err
@@ -177,7 +177,7 @@ func FindServers() ([]Server, error) {
 			if !entry.IsDir() {
 				if entry.Name() == VanillaJarName {
 					possibleServerJar := filepath.Join(s.BaseDir, entry.Name())
-					err = detectServerVersion(possibleServerJar, &s)
+					err = detectServerVersion(possibleServerJar, &s, progress)
 					if err != nil {
 						return nil, err
 					}
@@ -210,8 +210,8 @@ func FindServers() ([]Server, error) {
 	return servers, nil
 }
 
-func detectServerVersion(serverJarPath string, s *Server) error {
-	infos, err := GetVersionInfos()
+func detectServerVersion(serverJarPath string, s *Server, progress ManifestDownloadProgress) error {
+	infos, err := GetVersionInfos(progress)
 	if err != nil {
 		return err
 	}
