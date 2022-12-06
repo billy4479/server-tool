@@ -23,7 +23,7 @@ var icon []byte
 var iconHash = sha256.Sum256(icon)
 
 var defaultZenityOptions = []zenity.Option{
-	zenity.Title("Server Tool"),
+	zenity.Title(fmt.Sprintf("Server Tool %s", lib.Version)),
 }
 
 func moreOptions() error {
