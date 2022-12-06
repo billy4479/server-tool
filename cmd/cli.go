@@ -106,6 +106,41 @@ func runCli() error {
 					return fmt.Errorf("Server %s not found", name)
 				},
 			},
+			{
+				Name:  "wipe-cache",
+				Usage: "Wipe program cache",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  "java",
+						Usage: "Wipe java cache",
+					},
+					&cli.BoolFlag{
+						Name:  "manifest",
+						Usage: "Wipe manifest cache",
+					},
+				},
+				Action: func(ctx *cli.Context) error {
+					java := ctx.Bool("java")
+					manifest := ctx.Bool("manifest")
+
+					if java {
+						if err := os.RemoveAll(lib.JavaDir()); err != nil {
+							return err
+						}
+					}
+					if manifest {
+						if err := os.RemoveAll(lib.ManifestPath()); err != nil {
+							return err
+						}
+					}
+
+					if !java && !manifest {
+						cli.ShowSubcommandHelpAndExit(ctx, 1)
+					}
+
+					return nil
+				},
+			},
 		},
 	}
 
