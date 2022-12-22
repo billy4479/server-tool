@@ -132,7 +132,7 @@ func PostFn(baseDir string) (err error) {
 	}
 
 	if C.Git.UseLockFile {
-		_, err = RunCmdPretty(false, true, baseDir, false, "git", "rm", lockFileName)
+		_, err = RunCmdPretty(false, true, baseDir, false, "git", "rm", "-f", lockFileName)
 		if err != nil {
 			return err
 		}
