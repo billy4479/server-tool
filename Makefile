@@ -23,6 +23,6 @@ run: build
 
 build-release:
 	GOOS=linux GOARCH=amd64 $(GO) build -ldflags '$(RELEASE_LDFLAGS)' -o $(OUTPUT_DIR)/server-tool.linux
-	GOOS=windows GOARCH=amd64 $(GO) build -ldflags '$(RELEASE_LDFLAGS)' -o $(OUTPUT_DIR)/server-tool.windows.exe
+	GOOS=windows GOARCH=amd64 $(GO) build -ldflags '$(RELEASE_LDFLAGS) -H=windowsgui' -o $(OUTPUT_DIR)/server-tool.windows.exe
 
 .PHONY: build-release
