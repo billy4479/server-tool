@@ -32,6 +32,51 @@ const (
 	lockFileName = "__lock"
 )
 
+func UnfuckReset(baseDir string) error {
+	if C.Git.Disable {
+		return nil
+	}
+
+	_, err := RunCmdPretty(false, true, baseDir, false, "git", "reset", "--hard")
+	if err != nil {
+		return err
+	}
+
+	_, err = RunCmdPretty(false, true, baseDir, false, "git", "clean", "-fdx")
+	return err
+}
+
+func UnfuckCommit(baseDir string) error {
+	if C.Git.Disable {
+		return nil
+	}
+
+	// Remove lock if present
+	_, err := RunCmdPretty(false, true, baseDir, false, "git", "rm", "-f", "--ignore-unmatch", lockFileName)
+	if err != nil {
+		return err
+	}
+
+	_, err = RunCmdPretty(false, true, baseDir, false, "git", "add", "-A")
+	if err != nil {
+		return err
+	}
+
+	// We allow this to fail
+	success, err := RunCmdPretty(false, false, baseDir, false, "git", "commit", "-m", "Unfuck")
+	if err != nil {
+		return err
+	}
+
+	if success {
+		_, err = RunCmdPretty(false, true, baseDir, false, "git", "push")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func PreFn(baseDir string) (err error) {
 	if C.Git.Disable {
 		return nil

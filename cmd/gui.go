@@ -62,6 +62,28 @@ func moreOptions() error {
 	return nil
 }
 
+func unfuck(s *lib.Server) error {
+	res := zenity.Question("Unfuck menu: BE CAREFUL!",
+		append(defaultZenityOptions,
+			zenity.OKLabel("Reset"),
+			zenity.ExtraButton("Force save"),
+			zenity.CancelLabel("Cancel"),
+		)...)
+	if res == zenity.ErrCanceled {
+		return serverOptions(s)
+	} else if res == zenity.ErrExtraButton {
+		if err := lib.UnfuckCommit(s.BaseDir); err != nil {
+			return err
+		}
+		return serverOptions(s)
+	}
+
+	if err := lib.UnfuckReset(s.BaseDir); err != nil {
+		return err
+	}
+	return serverOptions(s)
+}
+
 type manifestProgressGUI struct {
 	total   int
 	current int
@@ -346,7 +368,7 @@ func serverOptions(s *lib.Server) error {
 		return res
 	case zenity.ErrExtraButton:
 		{
-			options := []string{"Run", "Open folder", "Install Fabric"}
+			options := []string{"Run", "Open folder", "Unfuck", "Install Fabric"}
 			res, err := zenity.List("More options", options, defaultZenityOptions...)
 			lib.L.Debug.Printf("[+] zenity: \"%s\", err:%v\n", res, err)
 			if err != nil || len(res) == 0 {
@@ -358,6 +380,8 @@ func serverOptions(s *lib.Server) error {
 			case options[1]:
 				return open.Start(s.BaseDir)
 			case options[2]:
+				return unfuck(s)
+			case options[3]:
 				_ = zenity.Info("Not yet implemented", defaultZenityOptions...)
 				return nil
 			}
