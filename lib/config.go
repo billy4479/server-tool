@@ -109,7 +109,7 @@ func LoadConfig() error {
 		return nil
 	}
 
-	L.Info.Printf("[+] Loading config at %s\n", configPath)
+	// L.Info.Printf("[+] Loading config at %s\n", configPath)
 
 	f, err := os.Open(configPath)
 	if err != nil {

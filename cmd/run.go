@@ -2,31 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"runtime"
 
 	"github.com/billy4479/server-tool/lib"
 )
 
-func makeCacheDir() (err error) {
-	if lib.C.Application.CacheDir == "" {
-		lib.C.Application.CacheDir, err = os.UserCacheDir()
-		if err != nil {
-			return err
-		}
-		lib.C.Application.CacheDir =
-			filepath.Join(lib.C.Application.CacheDir, lib.ProgName)
-	}
-	if err = os.MkdirAll(lib.C.Application.CacheDir, 0700); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func Run() error {
-
 	if (runtime.GOOS != "windows" &&
 		runtime.GOOS != "linux") ||
 		runtime.GOARCH != "amd64" {
@@ -35,15 +16,13 @@ func Run() error {
 
 	err := lib.LoadConfig()
 	if err != nil {
-		lib.L.Warn.Println("[!] An error has occurred while loading the config file. Falling back on the default...")
+		// lib.L.Warn.Println("[!] An error has occurred while loading the config file. Falling back on the default...")
 		if err = lib.WriteConfig(); err != nil {
 			return err
 		}
-	} else {
-		lib.L.Ok.Println("[+] Config loaded successfully")
 	}
 
-	if err := makeCacheDir(); err != nil {
+	if err := lib.SetupLogger(); err != nil {
 		return err
 	}
 

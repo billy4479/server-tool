@@ -14,6 +14,22 @@ var (
 	ErrAborted = errors.New("Aborted due to a failed command")
 )
 
+func MakeCacheDir() (err error) {
+	if C.Application.CacheDir == "" {
+		C.Application.CacheDir, err = os.UserCacheDir()
+		if err != nil {
+			return err
+		}
+		C.Application.CacheDir =
+			filepath.Join(C.Application.CacheDir, ProgName)
+	}
+	if err = os.MkdirAll(C.Application.CacheDir, 0700); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func RunCmdPretty(verbose bool, must bool, workDir string, noOutput bool, name string, args ...string) (bool, error) {
 	{
 		cmdLine := name
