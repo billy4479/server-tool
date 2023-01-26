@@ -25,6 +25,7 @@ func Run() error {
 	if err := lib.SetupLogger(); err != nil {
 		return err
 	}
+	defer lib.L.Close()
 
 	if !lib.C.Git.Disable {
 		gitVersion, err := lib.DetectGit()
@@ -41,5 +42,9 @@ func Run() error {
 		}
 	}()
 
-	return runCli()
+	err = runCli()
+	if err != nil {
+		lib.L.Error.Printf("[!] FATAL ERROR: %v", err)
+	}
+	return err
 }

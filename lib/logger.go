@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -22,6 +23,12 @@ type Logger struct {
 	Ok    sink
 	Warn  sink
 	Error sink
+
+	file *os.File
+}
+
+func (l *Logger) Close() {
+	l.file.Close()
 }
 
 var L *Logger = nil
@@ -45,7 +52,10 @@ func SetupLogger() error {
 		return err
 	}
 
-	logFile, err := os.Create(filepath.Join(C.Application.CacheDir, "logs", time.Now().Format(time.RFC3339)+".log"))
+	logFile, err := os.Create(filepath.Join(C.Application.CacheDir,
+		"logs",
+		strings.ReplaceAll(time.Now().Format(time.RFC3339), ":", "-")+".log",
+	))
 	if err != nil {
 		return err
 	}
@@ -88,6 +98,8 @@ func SetupLogger() error {
 		Ok:    makeSink(color.New(color.FgGreen)),
 		Warn:  makeSink(color.New(color.FgYellow)),
 		Error: makeSink(color.New(color.FgRed)),
+
+		file: logFile,
 	}
 	return nil
 }
