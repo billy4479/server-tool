@@ -33,7 +33,7 @@ const (
 )
 
 func UnfuckReset(baseDir string) error {
-	if C.Git.Disable {
+	if !C.Git.Enable {
 		return nil
 	}
 
@@ -47,7 +47,7 @@ func UnfuckReset(baseDir string) error {
 }
 
 func UnfuckCommit(baseDir string) error {
-	if C.Git.Disable {
+	if !C.Git.Enable {
 		return nil
 	}
 
@@ -78,23 +78,9 @@ func UnfuckCommit(baseDir string) error {
 }
 
 func PreFn(baseDir string, progress GitProgress) (err error) {
-	if C.Git.Disable {
+	if !C.Git.Enable {
 		return nil
 	}
-
-	if C.Git.Overrides.Enable {
-		pre := C.Git.Overrides.CustomPreCommands
-		if len(pre) > 0 {
-			for _, cmd := range pre {
-				_, err = RunCmdPretty(false, true, baseDir, false, cmd[0], cmd[1:]...)
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}
-
 	if !hasGit {
 		return fmt.Errorf("Git not found. Install Git and try again")
 	}
@@ -188,20 +174,6 @@ func hasRemotes(baseDir string) (bool, error) {
 }
 
 func PostFn(baseDir string, progress GitProgress) (err error) {
-
-	if C.Git.Overrides.Enable {
-		post := C.Git.Overrides.CustomPostCommands
-		if len(post) > 0 {
-			for _, cmd := range post {
-				_, err = RunCmdPretty(false, true, baseDir, false, cmd[0], cmd[1:]...)
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}
-
 	if !hasGit {
 		return fmt.Errorf("Git not found. Install Git and try again")
 	}

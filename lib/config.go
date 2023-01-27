@@ -17,27 +17,11 @@ type Config struct {
 		Quiet  bool
 		GUI    bool
 		NoEULA bool
-	}
-	Java struct {
-		ExecutableOverride string
-		Memory             struct {
-			Amount    uint
-			Gigabytes bool
-		}
-		Flags struct {
-			ExtraFlags      []string
-			OverrideDefault bool
-		}
+		Memory uint
 	}
 	Git struct {
-		Disable                  bool
-		DisableGithubIntegration bool
-		UseLockFile              bool
-		Overrides                struct {
-			Enable             bool
-			CustomPreCommands  [][]string
-			CustomPostCommands [][]string
-		}
+		Enable      bool
+		UseLockFile bool
 	}
 }
 
@@ -84,21 +68,11 @@ func NewConfig() *Config {
 		c.Minecraft.Quiet = false
 		c.Minecraft.GUI = false
 		c.Minecraft.NoEULA = false
+		c.Minecraft.Memory = 6 * 1024
 	}
 	{
-		c.Java.ExecutableOverride = ""
-		c.Java.Memory.Amount = 6
-		c.Java.Memory.Gigabytes = true
-		c.Java.Flags.ExtraFlags = nil
-		c.Java.Flags.OverrideDefault = false
-	}
-	{
-		c.Git.Disable = false
-		c.Git.DisableGithubIntegration = false
+		c.Git.Enable = true
 		c.Git.UseLockFile = true
-		c.Git.Overrides.Enable = false
-		c.Git.Overrides.CustomPreCommands = nil
-		c.Git.Overrides.CustomPostCommands = nil
 	}
 	return c
 }

@@ -27,7 +27,7 @@ func Run() error {
 	}
 	defer lib.L.Close()
 
-	if !lib.C.Git.Disable {
+	if lib.C.Git.Enable {
 		gitVersion, err := lib.DetectGit()
 		if err != nil {
 			lib.L.Warn.Println("[!] Git not detected!")

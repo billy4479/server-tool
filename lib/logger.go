@@ -12,9 +12,9 @@ import (
 )
 
 type sink struct {
-	Print   func(...interface{}) (int, error)
-	Printf  func(string, ...interface{}) (int, error)
-	Println func(...interface{}) (int, error)
+	Print   func(...interface{})
+	Printf  func(string, ...interface{})
+	Println func(...interface{})
 }
 
 type Logger struct {
@@ -64,29 +64,29 @@ func SetupLogger() error {
 		if c == nil {
 			writer := io.MultiWriter(logFile, os.Stdout)
 			return sink{
-				Print: func(i ...interface{}) (int, error) {
-					return fmt.Fprint(writer, i...)
+				Print: func(i ...interface{}) {
+					fmt.Fprint(writer, i...)
 				},
-				Printf: func(s string, i ...interface{}) (int, error) {
-					return fmt.Fprintf(writer, s, i...)
+				Printf: func(s string, i ...interface{}) {
+					fmt.Fprintf(writer, s, i...)
 				},
-				Println: func(i ...interface{}) (int, error) {
-					return fmt.Fprintln(writer, i...)
+				Println: func(i ...interface{}) {
+					fmt.Fprintln(writer, i...)
 				},
 			}
 		} else {
 			return sink{
-				Print: func(i ...interface{}) (int, error) {
+				Print: func(i ...interface{}) {
 					c.Print(i...)
-					return fmt.Fprint(logFile, i...)
+					fmt.Fprint(logFile, i...)
 				},
-				Printf: func(s string, i ...interface{}) (int, error) {
+				Printf: func(s string, i ...interface{}) {
 					c.Printf(s, i...)
-					return fmt.Fprintf(logFile, s, i...)
+					fmt.Fprintf(logFile, s, i...)
 				},
-				Println: func(i ...interface{}) (int, error) {
+				Println: func(i ...interface{}) {
 					c.Println(i...)
-					return fmt.Fprintln(logFile, i...)
+					fmt.Fprintln(logFile, i...)
 				},
 			}
 		}

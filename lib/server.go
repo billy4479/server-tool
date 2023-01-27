@@ -44,8 +44,8 @@ const (
 	VanillaJarName   = "server.jar"
 	GitDirectoryName = ".git"
 
-	minMemFlag = "-Xms%d%s"
-	maxMemFlag = "-Xmx%d%s"
+	minMemFlag = "-Xms%dM"
+	maxMemFlag = "-Xmx%dM"
 	noGuiFlag  = "nogui"
 )
 
@@ -77,30 +77,17 @@ func ensureJavaPretty(s *Server, progress JavaDownloadProgress) (string, error) 
 }
 
 func runJar(s *Server, gui bool, javaProgress JavaDownloadProgress) (bool, error) {
-	var err error
-	javaExe := C.Java.ExecutableOverride
-	if javaExe == "" {
-		javaExe, err = ensureJavaPretty(s, javaProgress)
-		if err != nil {
-			return false, err
-		}
+	javaExe, err := ensureJavaPretty(s, javaProgress)
+	if err != nil {
+		return false, err
 	}
 
-	letter := func() string {
-		if C.Java.Memory.Gigabytes {
-			return "G"
-		} else {
-			return "M"
-		}
-	}
 	args := []string{
-		fmt.Sprintf(minMemFlag, C.Java.Memory.Amount, letter()),
-		fmt.Sprintf(maxMemFlag, C.Java.Memory.Amount, letter()),
+		fmt.Sprintf(minMemFlag, C.Minecraft.Memory),
+		fmt.Sprintf(maxMemFlag, C.Minecraft.Memory),
 	}
-	if !C.Java.Flags.OverrideDefault {
-		args = append(args, javaArgs...)
-	}
-	args = append(args, C.Java.Flags.ExtraFlags...)
+
+	args = append(args, javaArgs...)
 
 	if s.Type == Vanilla {
 		args = append(args, VanillaJarName)
@@ -130,7 +117,7 @@ func runJar(s *Server, gui bool, javaProgress JavaDownloadProgress) (bool, error
 }
 
 func (s *Server) Start(gui bool, javaProgress JavaDownloadProgress, gitProgress GitProgress) error {
-	if s.HasGit && !C.Git.Disable {
+	if s.HasGit && C.Git.Enable {
 		if err := PreFn(s.BaseDir, gitProgress); err != nil {
 			return err
 		}
@@ -141,7 +128,7 @@ func (s *Server) Start(gui bool, javaProgress JavaDownloadProgress, gitProgress 
 		return err
 	}
 
-	if s.HasGit && !C.Git.Disable {
+	if s.HasGit && C.Git.Enable {
 		if !success {
 			L.Warn.Println("[!] The server terminated with an error. Git will not update.\nGiving up, you are on your own now")
 		} else if err := PostFn(s.BaseDir, gitProgress); err != nil {
@@ -194,7 +181,7 @@ func FindServers(progress ManifestDownloadProgress) ([]Server, error) {
 				}
 			} else {
 				if entry.Name() == GitDirectoryName {
-					s.HasGit = !C.Git.Disable
+					s.HasGit = C.Git.Enable
 				}
 			}
 		}

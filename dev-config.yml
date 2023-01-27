@@ -6,19 +6,7 @@ minecraft:
   quiet: false
   gui: false
   noeula: false
-java:
-  executableoverride: ""
-  memory:
-    amount: 6
-    gigabytes: true
-  flags:
-    extraflags: []
-    overridedefault: false
+  memory: 6144
 git:
-  disable: false
-  disablegithubintegration: false
+  enable: true
   uselockfile: true
-  overrides:
-    enable: false
-    customprecommands: []
-    custompostcommands: []
