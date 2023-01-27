@@ -2,7 +2,7 @@ GO ?= go
 CONFIG_PATH ?= ./dev-config.yml
 VERSION ?= $(shell git describe --always --tags)
 LDFLAGS ?= -X "github.com/billy4479/server-tool/lib.Version=$(VERSION)"
-RELEASE_LDFLAGS ?= -s -w $(LDFLAGS)
+RELEASE_LDFLAGS ?= -s $(LDFLAGS) # Apparently adding -w shows a terminal in windows...
 OUTPUT_DIR ?= ./build
 ARGS ?= 
 

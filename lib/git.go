@@ -99,9 +99,16 @@ func PreFn(baseDir string) (err error) {
 		return fmt.Errorf("Git not found. Install Git and try again")
 	}
 
-	_, err = RunCmdPretty(false, true, baseDir, false, "git", "pull")
+	remotes, err := hasRemotes(baseDir)
 	if err != nil {
 		return err
+	}
+
+	if remotes {
+		_, err = RunCmdPretty(false, true, baseDir, false, "git", "pull")
+		if err != nil {
+			return err
+		}
 	}
 
 	lockFilePath := filepath.Join(baseDir, lockFileName)
@@ -145,9 +152,11 @@ func PreFn(baseDir string) (err error) {
 				return err
 			}
 
-			_, err = RunCmdPretty(false, true, baseDir, false, "git", "push")
-			if err != nil {
-				return err
+			if remotes {
+				_, err = RunCmdPretty(false, true, baseDir, false, "git", "push")
+				if err != nil {
+					return err
+				}
 			}
 		}
 	} else {
@@ -155,6 +164,20 @@ func PreFn(baseDir string) (err error) {
 	}
 
 	return nil
+}
+
+func hasRemotes(baseDir string) (bool, error) {
+	cmd := exec.Command("git", "remote")
+	cmd.Dir = baseDir
+	cmd.Stderr = os.Stderr
+	out, err := cmd.Output()
+	if err != nil {
+		return false, err
+	}
+
+	remotes := strings.Split(strings.TrimSpace(string(out)), "\n")
+
+	return len(remotes) != 1, nil
 }
 
 func PostFn(baseDir string) (err error) {
@@ -193,6 +216,13 @@ func PostFn(baseDir string) (err error) {
 		return err
 	}
 
-	_, err = RunCmdPretty(false, true, baseDir, false, "git", "push")
+	remotes, err := hasRemotes(baseDir)
+	if err != nil {
+		return err
+	}
+
+	if remotes {
+		_, err = RunCmdPretty(false, true, baseDir, false, "git", "push")
+	}
 	return err
 }
