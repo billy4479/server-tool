@@ -77,7 +77,7 @@ func UnfuckCommit(baseDir string) error {
 	return nil
 }
 
-func PreFn(baseDir string) (err error) {
+func PreFn(baseDir string, progress GitProgress) (err error) {
 	if C.Git.Disable {
 		return nil
 	}
@@ -99,12 +99,17 @@ func PreFn(baseDir string) (err error) {
 		return fmt.Errorf("Git not found. Install Git and try again")
 	}
 
+	dialog := progress()
+	defer dialog("")
+
+	dialog("Checking remotes")
 	remotes, err := hasRemotes(baseDir)
 	if err != nil {
 		return err
 	}
 
 	if remotes {
+		dialog("Pulling latest changes")
 		_, err = RunCmdPretty(false, true, baseDir, false, "git", "pull")
 		if err != nil {
 			return err
@@ -121,6 +126,7 @@ func PreFn(baseDir string) (err error) {
 		}
 		return fmt.Errorf("A lockfile was found! The server is probably being used by %s, aborting.", s[:len(s)-1])
 	} else if errors.Is(err, os.ErrNotExist) {
+		dialog("Creating lockfile")
 		if C.Git.UseLockFile {
 			{
 				f, err := os.Create(lockFilePath)
@@ -152,6 +158,7 @@ func PreFn(baseDir string) (err error) {
 				return err
 			}
 
+			dialog("Pushing lock file")
 			if remotes {
 				_, err = RunCmdPretty(false, true, baseDir, false, "git", "push")
 				if err != nil {
@@ -180,7 +187,7 @@ func hasRemotes(baseDir string) (bool, error) {
 	return len(remotes) != 1, nil
 }
 
-func PostFn(baseDir string) (err error) {
+func PostFn(baseDir string, progress GitProgress) (err error) {
 
 	if C.Git.Overrides.Enable {
 		post := C.Git.Overrides.CustomPostCommands
@@ -199,29 +206,37 @@ func PostFn(baseDir string) (err error) {
 		return fmt.Errorf("Git not found. Install Git and try again")
 	}
 
+	dialog := progress()
+	defer dialog("")
+
 	if C.Git.UseLockFile {
+		dialog("Removing lock file")
 		_, err = RunCmdPretty(false, true, baseDir, false, "git", "rm", "-f", lockFileName)
 		if err != nil {
 			return err
 		}
 	}
 
+	dialog("Adding new files")
 	_, err = RunCmdPretty(false, true, baseDir, false, "git", "add", "-A")
 	if err != nil {
 		return err
 	}
 
+	dialog("Committing files")
 	_, err = RunCmdPretty(false, true, baseDir, false, "git", "commit", "--allow-empty-message", "-m", "")
 	if err != nil {
 		return err
 	}
 
+	dialog("Checking remotes")
 	remotes, err := hasRemotes(baseDir)
 	if err != nil {
 		return err
 	}
 
 	if remotes {
+		dialog("Pushing files")
 		_, err = RunCmdPretty(false, true, baseDir, false, "git", "push")
 	}
 	return err

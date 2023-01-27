@@ -133,7 +133,7 @@ func makeServersMenuItem(servers []lib.Server) []Option {
 
 		result = append(result, Option{
 			Description: desc,
-			Action:      func() error { return s.Start(lib.C.Minecraft.GUI, &javaDownloadProgressTUI{}) },
+			Action:      func() error { return s.Start(lib.C.Minecraft.GUI, &javaDownloadProgressTUI{}, gitProgressNil) },
 		})
 	}
 

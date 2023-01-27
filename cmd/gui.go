@@ -352,6 +352,34 @@ func (p *javaDownloadProgressGUI) OnExtractionDone() {
 	p.dialog.Close()
 }
 
+func gitProgressGUI() func(string) {
+	dialog, err := zenity.Progress(append(defaultZenityOptions, zenity.Pulsate(), zenity.NoCancel())...)
+
+	// Unsupported: don't show any gui.
+	if err != nil {
+		return func(s string) {}
+	}
+
+	isComplete := false
+
+	return func(s string) {
+		if isComplete {
+			lib.L.Warn.Println("[!] GitProgressGUI: calling function after dialog closed")
+			return
+		}
+
+		if len(s) == 0 {
+			dialog.Close()
+			isComplete = true
+		} else {
+			err := dialog.Text(s)
+			if err != nil {
+				lib.L.Warn.Println("[!] GitProgressGUI:", err)
+			}
+		}
+	}
+}
+
 func serverOptions(s *lib.Server) error {
 	res := zenity.Question(fmt.Sprintf("Server \"%s\" was selected", s.PrettyName()),
 		append(defaultZenityOptions,
@@ -363,7 +391,7 @@ func serverOptions(s *lib.Server) error {
 
 	switch res {
 	case nil:
-		return s.Start(true, &javaDownloadProgressGUI{})
+		return s.Start(true, &javaDownloadProgressGUI{}, gitProgressGUI)
 	case zenity.ErrCanceled:
 		return res
 	case zenity.ErrExtraButton:
@@ -376,7 +404,7 @@ func serverOptions(s *lib.Server) error {
 			}
 			switch res {
 			case options[0]:
-				return s.Start(true, &javaDownloadProgressGUI{})
+				return s.Start(true, &javaDownloadProgressGUI{}, gitProgressGUI)
 			case options[1]:
 				return open.Start(s.BaseDir)
 			case options[2]:

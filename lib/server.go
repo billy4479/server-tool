@@ -26,6 +26,8 @@ type Server struct {
 	HasGit  bool
 }
 
+type GitProgress func() func(string)
+
 func (s *Server) PrettyName() string {
 	versionStr := s.Version.ID
 	if s.Type == Fabric {
@@ -74,11 +76,11 @@ func ensureJavaPretty(s *Server, progress JavaDownloadProgress) (string, error) 
 	return javaExe, nil
 }
 
-func runJar(s *Server, gui bool, progress JavaDownloadProgress) (bool, error) {
+func runJar(s *Server, gui bool, javaProgress JavaDownloadProgress) (bool, error) {
 	var err error
 	javaExe := C.Java.ExecutableOverride
 	if javaExe == "" {
-		javaExe, err = ensureJavaPretty(s, progress)
+		javaExe, err = ensureJavaPretty(s, javaProgress)
 		if err != nil {
 			return false, err
 		}
@@ -127,14 +129,14 @@ func runJar(s *Server, gui bool, progress JavaDownloadProgress) (bool, error) {
 	)
 }
 
-func (s *Server) Start(gui bool, progress JavaDownloadProgress) error {
+func (s *Server) Start(gui bool, javaProgress JavaDownloadProgress, gitProgress GitProgress) error {
 	if s.HasGit && !C.Git.Disable {
-		if err := PreFn(s.BaseDir); err != nil {
+		if err := PreFn(s.BaseDir, gitProgress); err != nil {
 			return err
 		}
 	}
 
-	success, err := runJar(s, gui, progress)
+	success, err := runJar(s, gui, javaProgress)
 	if err != nil {
 		return err
 	}
@@ -142,7 +144,7 @@ func (s *Server) Start(gui bool, progress JavaDownloadProgress) error {
 	if s.HasGit && !C.Git.Disable {
 		if !success {
 			L.Warn.Println("[!] The server terminated with an error. Git will not update.\nGiving up, you are on your own now")
-		} else if err := PostFn(s.BaseDir); err != nil {
+		} else if err := PostFn(s.BaseDir, gitProgress); err != nil {
 			return err
 		}
 	}

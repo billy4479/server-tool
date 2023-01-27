@@ -33,6 +33,10 @@ func (p *javaDownloadProgressCLI) OnExtractionStart(name string)            {}
 func (p *javaDownloadProgressCLI) OnExtractionProgress(name string)         {}
 func (p *javaDownloadProgressCLI) OnExtractionDone()                        {}
 
+func gitProgressNil() func(string) {
+	return func(s string) {}
+}
+
 func runCli() error {
 	app := cli.App{
 		Name:    "Server Tool",
@@ -100,7 +104,7 @@ func runCli() error {
 					name := ctx.String("name")
 					for _, s := range servers {
 						if s.Name == name {
-							return s.Start(false, &javaDownloadProgressCLI{})
+							return s.Start(false, &javaDownloadProgressCLI{}, gitProgressNil)
 						}
 					}
 					return fmt.Errorf("Server %s not found", name)
