@@ -141,7 +141,7 @@ func updateVersionInfos(progress ManifestDownloadProgress) ([]VersionInfo, error
 			}
 
 			if !okSha {
-				L.Warn.Printf("[!] Version %s has no SHA1. Skipping...\n", id)
+				L.Warn.Printf("[?] Version %s has no SHA1. Skipping...\n", id)
 				return
 			}
 

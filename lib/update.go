@@ -19,7 +19,7 @@ func DoUpdate(newVersionURL string) error {
 	defer resp.Body.Close()
 	err = selfupdate.Apply(resp.Body, selfupdate.Options{})
 	if err != nil {
-		L.Warn.Printf("[!] Update failed: %v\n", err)
+		L.Warn.Printf("[?] Update failed: %v\n", err)
 		if err = selfupdate.RollbackError(err); err != nil {
 			L.Error.Println("[!] Rolling back also failed, you're on your own now")
 			return err

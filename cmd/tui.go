@@ -90,16 +90,16 @@ func makeMenu(noDefault bool, options ...Option) (*Option, error) {
 
 			if n >= len(options) || n < 0 {
 				if noDefault {
-					lib.L.Warn.Printf("[!] Option %d was not found.\n", inputN)
+					lib.L.Warn.Printf("[?] Option %d was not found.\n", inputN)
 					continue
 				}
-				lib.L.Warn.Printf("[!] Option %d was not found, falling back on default.\n", inputN)
+				lib.L.Warn.Printf("[?] Option %d was not found, falling back on default.\n", inputN)
 				return &options[0], nil
 			}
 
 			return &options[n], nil
 		} else if noDefault {
-			lib.L.Warn.Println("[!] Invalid option.")
+			lib.L.Warn.Println("[?] Invalid option.")
 		}
 		run = noDefault
 	}
@@ -297,7 +297,7 @@ func runTui() error {
 							}
 						}
 
-						lib.L.Warn.Printf("[!] Version %s was not found. Type ? for a list of the available versions\n", s)
+						lib.L.Warn.Printf("[?] Version %s was not found. Type ? for a list of the available versions\n", s)
 						return false
 					},
 				)

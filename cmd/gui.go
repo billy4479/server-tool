@@ -364,7 +364,7 @@ func gitProgressGUI() func(string) {
 
 	return func(s string) {
 		if isComplete {
-			lib.L.Warn.Println("[!] GitProgressGUI: calling function after dialog closed")
+			lib.L.Warn.Println("[?] GitProgressGUI: calling function after dialog closed")
 			return
 		}
 
@@ -374,7 +374,7 @@ func gitProgressGUI() func(string) {
 		} else {
 			err := dialog.Text(s)
 			if err != nil {
-				lib.L.Warn.Println("[!] GitProgressGUI:", err)
+				lib.L.Warn.Println("[?] GitProgressGUI:", err)
 			}
 		}
 	}

@@ -191,7 +191,7 @@ func FindServers(progress ManifestDownloadProgress) ([]Server, error) {
 	}
 
 	if len(servers) == 0 {
-		L.Warn.Println("[!] No server were found")
+		L.Warn.Println("[?] No server were found")
 	}
 
 	return servers, nil
