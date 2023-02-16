@@ -455,6 +455,10 @@ func runGui() error {
 		lib.L.Warn.Printf("[!] An error has occurred while checking for updates: %v", err)
 	}
 
+	return runMainGui()
+}
+
+func runMainGui() error {
 	server, err := chooseServer()
 
 	if err != nil {
@@ -465,7 +469,7 @@ func runGui() error {
 	}
 
 	if err = serverOptions(server); err == zenity.ErrCanceled {
-		return runGui()
+		return runMainGui()
 	}
 
 	return err

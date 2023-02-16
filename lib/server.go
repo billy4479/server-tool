@@ -76,10 +76,10 @@ func ensureJavaPretty(s *Server, progress JavaDownloadProgress) (string, error) 
 	return javaExe, nil
 }
 
-func runJar(s *Server, gui bool, javaProgress JavaDownloadProgress) (bool, error) {
+func runJar(s *Server, gui bool, javaProgress JavaDownloadProgress) error {
 	javaExe, err := ensureJavaPretty(s, javaProgress)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	args := []string{
@@ -103,14 +103,11 @@ func runJar(s *Server, gui bool, javaProgress JavaDownloadProgress) (bool, error
 
 	java, err := filepath.Abs(javaExe)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	return RunCmdPretty(
-		true,
-		false,
 		s.BaseDir,
-		C.Minecraft.Quiet,
 		java,
 		args...,
 	)
@@ -123,15 +120,16 @@ func (s *Server) Start(gui bool, javaProgress JavaDownloadProgress, gitProgress 
 		}
 	}
 
-	success, err := runJar(s, gui, javaProgress)
+	err := runJar(s, gui, javaProgress)
 	if err != nil {
+		if err == ErrExitedAbnormally {
+			L.Error.Println("[!] The server terminated with an error. Git will not update. Giving up, *you are on your own now*")
+		}
 		return err
 	}
 
 	if s.HasGit && C.Git.Enable {
-		if !success {
-			L.Warn.Println("[!] The server terminated with an error. Git will not update.\nGiving up, you are on your own now")
-		} else if err := PostFn(s.BaseDir, gitProgress); err != nil {
+		if err := PostFn(s.BaseDir, gitProgress); err != nil {
 			return err
 		}
 	}

@@ -37,12 +37,12 @@ func UnfuckReset(baseDir string) error {
 		return nil
 	}
 
-	_, err := RunCmdPretty(false, true, baseDir, false, "git", "reset", "--hard")
+	err := RunCmdPretty(baseDir, "git", "reset", "--hard")
 	if err != nil {
 		return err
 	}
 
-	_, err = RunCmdPretty(false, true, baseDir, false, "git", "clean", "-fdx")
+	err = RunCmdPretty(baseDir, "git", "clean", "-fdx")
 	return err
 }
 
@@ -52,29 +52,23 @@ func UnfuckCommit(baseDir string) error {
 	}
 
 	// Remove lock if present
-	_, err := RunCmdPretty(false, true, baseDir, false, "git", "rm", "-f", "--ignore-unmatch", lockFileName)
+	err := RunCmdPretty(baseDir, "git", "rm", "-f", "--ignore-unmatch", lockFileName)
 	if err != nil {
 		return err
 	}
 
-	_, err = RunCmdPretty(false, true, baseDir, false, "git", "add", "-A")
+	err = RunCmdPretty(baseDir, "git", "add", "-A")
 	if err != nil {
 		return err
 	}
 
-	// We allow this to fail
-	success, err := RunCmdPretty(false, false, baseDir, false, "git", "commit", "-m", "Unfuck")
+	err = RunCmdPretty(baseDir, "git", "commit", "-m", "Unfuck")
 	if err != nil {
 		return err
 	}
 
-	if success {
-		_, err = RunCmdPretty(false, true, baseDir, false, "git", "push")
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	err = RunCmdPretty(baseDir, "git", "push")
+	return err
 }
 
 func PreFn(baseDir string, progress GitProgress) (err error) {
@@ -96,7 +90,7 @@ func PreFn(baseDir string, progress GitProgress) (err error) {
 
 	if remotes {
 		dialog("Pulling latest changes")
-		_, err = RunCmdPretty(false, true, baseDir, false, "git", "pull")
+		err = RunCmdPretty(baseDir, "git", "pull")
 		if err != nil {
 			return err
 		}
@@ -134,19 +128,19 @@ func PreFn(baseDir string, progress GitProgress) (err error) {
 				}
 			}
 
-			_, err = RunCmdPretty(false, true, baseDir, false, "git", "add", "-A")
+			err = RunCmdPretty(baseDir, "git", "add", "-A")
 			if err != nil {
 				return err
 			}
 
-			_, err = RunCmdPretty(false, true, baseDir, false, "git", "commit", "-m", "Pushing lock file")
+			err = RunCmdPretty(baseDir, "git", "commit", "-m", "Pushing lock file")
 			if err != nil {
 				return err
 			}
 
 			dialog("Pushing lock file")
 			if remotes {
-				_, err = RunCmdPretty(false, true, baseDir, false, "git", "push")
+				err = RunCmdPretty(baseDir, "git", "push")
 				if err != nil {
 					return err
 				}
@@ -168,7 +162,8 @@ func hasRemotes(baseDir string) (bool, error) {
 		return false, err
 	}
 
-	remotes := strings.Split(strings.TrimSpace(string(out)), "\n")
+	remotes := strings.Split(strings.ReplaceAll(string(out), "\r", ""), "\n")
+	L.Debug.Println(remotes)
 
 	return len(remotes) != 1, nil
 }
@@ -183,20 +178,20 @@ func PostFn(baseDir string, progress GitProgress) (err error) {
 
 	if C.Git.UseLockFile {
 		dialog("Removing lock file")
-		_, err = RunCmdPretty(false, true, baseDir, false, "git", "rm", "-f", lockFileName)
+		err = RunCmdPretty(baseDir, "git", "rm", "-f", lockFileName)
 		if err != nil {
 			return err
 		}
 	}
 
 	dialog("Adding new files")
-	_, err = RunCmdPretty(false, true, baseDir, false, "git", "add", "-A")
+	err = RunCmdPretty(baseDir, "git", "add", "-A")
 	if err != nil {
 		return err
 	}
 
 	dialog("Committing files")
-	_, err = RunCmdPretty(false, true, baseDir, false, "git", "commit", "--allow-empty-message", "-m", "")
+	err = RunCmdPretty(baseDir, "git", "commit", "--allow-empty-message", "-m", "")
 	if err != nil {
 		return err
 	}
@@ -209,7 +204,7 @@ func PostFn(baseDir string, progress GitProgress) (err error) {
 
 	if remotes {
 		dialog("Pushing files")
-		_, err = RunCmdPretty(false, true, baseDir, false, "git", "push")
+		err = RunCmdPretty(baseDir, "git", "push")
 	}
 	return err
 }

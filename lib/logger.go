@@ -24,7 +24,8 @@ type Logger struct {
 	Warn  sink
 	Error sink
 
-	file *os.File
+	Writer io.Writer
+	file   *os.File
 }
 
 func (l *Logger) Close() {
@@ -60,9 +61,9 @@ func SetupLogger() error {
 		return err
 	}
 
+	writer := io.MultiWriter(logFile, os.Stdout)
 	makeSink := func(c *color.Color) sink {
 		if c == nil {
-			writer := io.MultiWriter(logFile, os.Stdout)
 			return sink{
 				Print: func(i ...interface{}) {
 					fmt.Fprint(writer, i...)
@@ -99,7 +100,8 @@ func SetupLogger() error {
 		Warn:  makeSink(color.New(color.FgYellow)),
 		Error: makeSink(color.New(color.FgRed)),
 
-		file: logFile,
+		file:   logFile,
+		Writer: writer,
 	}
 	return nil
 }
