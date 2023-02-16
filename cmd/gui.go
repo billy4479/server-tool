@@ -445,17 +445,25 @@ func checkUpdates() error {
 	return nil
 }
 
-func runGui() error {
+func runGui() (err error) {
 
-	if err := setupIcon(); err != nil {
+	defer func() {
+		if err != nil {
+			zenity.Error(fmt.Sprintf("An error has occurred: %v", err), defaultZenityOptions...)
+		}
+	}()
+
+	if err = setupIcon(); err != nil {
 		return err
 	}
 
-	if err := checkUpdates(); err != nil {
-		lib.L.Warn.Printf("[!] An error has occurred while checking for updates: %v", err)
+	if err = checkUpdates(); err != nil {
+		lib.L.Warn.Printf("[?] An error has occurred while checking for updates: %v", err)
+		err = nil
 	}
 
-	return runMainGui()
+	err = runMainGui()
+	return err
 }
 
 func runMainGui() error {
