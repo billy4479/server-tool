@@ -43,6 +43,28 @@ func UnfuckReset(baseDir string) error {
 	}
 
 	err = RunCmdPretty(baseDir, "git", "clean", "-fdx")
+	if err != nil {
+		return err
+	}
+
+	remote, err := hasRemotes(baseDir)
+	if err != nil {
+		return err
+	}
+
+	if remote {
+		err = RunCmdPretty(baseDir, "git", "fetch", "--all")
+		if err != nil {
+			return err
+		}
+
+		// FIXME: we assume the name of the branches here
+		err = RunCmdPretty(baseDir, "git", "reset", "--hard", "origin/master")
+		if err != nil {
+			return err
+		}
+	}
+
 	return err
 }
 
@@ -163,7 +185,7 @@ func hasRemotes(baseDir string) (bool, error) {
 	}
 
 	remotes := strings.Split(strings.ReplaceAll(string(out), "\r", ""), "\n")
-	L.Debug.Println(remotes)
+	L.Debug.Printf("Found the following remotes %v (%d)", remotes, len(remotes))
 
 	return len(remotes) != 1, nil
 }
