@@ -29,8 +29,9 @@ var defaultZenityOptions = []zenity.Option{
 func moreOptions() error {
 	options := []string{
 		"Open server folder",
-		"Edit config",
 		"Open cache folder",
+		"Open logs folder",
+		"Edit config",
 		"Wipe manifest cache",
 		"Wipe java cache",
 	}
@@ -44,6 +45,10 @@ func moreOptions() error {
 	case options[0]:
 		return open.Start(lib.C.Application.WorkingDir)
 	case options[1]:
+		return open.Start(lib.C.Application.CacheDir)
+	case options[2]:
+		return open.Start(lib.GetLogsPath())
+	case options[3]:
 		{
 			configPath, _, err := lib.GetConfigPath()
 			if err != nil {
@@ -51,11 +56,9 @@ func moreOptions() error {
 			}
 			return open.Start(configPath)
 		}
-	case options[2]:
-		return open.Start(lib.C.Application.CacheDir)
-	case options[3]:
-		return os.RemoveAll(lib.ManifestPath())
 	case options[4]:
+		return os.RemoveAll(lib.ManifestPath())
+	case options[5]:
 		return os.RemoveAll(lib.JavaDir())
 	}
 

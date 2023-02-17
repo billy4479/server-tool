@@ -34,6 +34,10 @@ func (l *Logger) Close() {
 
 var L *Logger = nil
 
+func GetLogsPath() string {
+	return filepath.Join(C.Application.CacheDir, "logs")
+}
+
 func SetupLogger() error {
 	if L != nil {
 		return nil
@@ -53,8 +57,7 @@ func SetupLogger() error {
 		return err
 	}
 
-	logFile, err := os.Create(filepath.Join(C.Application.CacheDir,
-		"logs",
+	logFile, err := os.Create(filepath.Join(GetLogsPath(),
 		strings.ReplaceAll(time.Now().Format(time.RFC3339), ":", "-")+".log",
 	))
 	if err != nil {
