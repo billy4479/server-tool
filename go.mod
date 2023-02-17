@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/Jeffail/gabs/v2 v2.6.1
-	github.com/TheTitanrain/w32 v0.0.0-20200114052255-2654d97dbd3d
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
 	github.com/minio/selfupdate v0.5.0

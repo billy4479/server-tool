@@ -42,7 +42,6 @@ func runCli() error {
 		Name:    "Server Tool",
 		Version: lib.Version,
 		Action: func(ctx *cli.Context) error {
-			hideConsole()
 			return runGui()
 		},
 		Usage: "Run and manage your Minecraft servers. If no command is specified runs in GUI mode",

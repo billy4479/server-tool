@@ -15,6 +15,7 @@ var (
 
 func DetectGit() (string, error) {
 	cmd := exec.Command("git", "--version")
+	addSysProcAttr(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", err
@@ -138,6 +139,7 @@ func PreFn(baseDir string, progress GitProgress) (err error) {
 				defer f.Close()
 
 				cmd := exec.Command("git", "config", "user.name")
+				addSysProcAttr(cmd)
 				cmd.Stderr = os.Stderr
 				out, err := cmd.Output()
 				if err != nil {
@@ -177,6 +179,7 @@ func PreFn(baseDir string, progress GitProgress) (err error) {
 
 func hasRemotes(baseDir string) (bool, error) {
 	cmd := exec.Command("git", "remote")
+	addSysProcAttr(cmd)
 	cmd.Dir = baseDir
 	cmd.Stderr = os.Stderr
 	out, err := cmd.Output()

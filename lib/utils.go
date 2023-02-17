@@ -48,6 +48,7 @@ func RunCmdPretty(workDir string, name string, args ...string) error {
 	cmd.Stderr = L.Writer
 	cmd.Stdin = os.Stdin
 	cmd.Dir = workDir
+	addSysProcAttr(cmd)
 
 	L.Info.Println("[+] Start of command output")
 	err := cmd.Run()
