@@ -108,8 +108,7 @@ func updateVersionInfos(progress ManifestDownloadProgress) ([]VersionInfo, error
 				infos.Lock()
 				infos.err = err
 
-				L.Error.Printf("[!] An error has occurred while downloading %s\n", id)
-				fmt.Println(err)
+				L.Error.Printf("[!] An error has occurred while downloading %s: %v\n", id, err)
 
 				infos.Unlock()
 				return
@@ -121,8 +120,7 @@ func updateVersionInfos(progress ManifestDownloadProgress) ([]VersionInfo, error
 				infos.Lock()
 				infos.err = err
 
-				L.Error.Printf("[!] An error has occurred while parsing %s\n", id)
-				fmt.Println(infos.err)
+				L.Error.Printf("[!] An error has occurred while parsing %s: %v\n", id, infos.err)
 
 				infos.Unlock()
 				return

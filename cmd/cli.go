@@ -77,7 +77,7 @@ func runCli() error {
 						return err
 					}
 					for _, server := range servers {
-						fmt.Println(server.PrettyName())
+						lib.L.Debug.Println(server.PrettyName())
 					}
 					return nil
 				},

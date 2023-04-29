@@ -286,7 +286,7 @@ func runTui() error {
 
 						if s == "?" {
 							for _, v := range versions {
-								fmt.Printf("[+] %s\n", v.ID)
+								lib.L.Debug.Printf("[+] %s\n", v.ID)
 							}
 							return false
 						}
