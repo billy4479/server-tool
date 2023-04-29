@@ -66,24 +66,33 @@ func moreOptions() error {
 }
 
 func unfuck(s *lib.Server) error {
-	res := zenity.Question("Unfuck menu: BE CAREFUL!",
-		append(defaultZenityOptions,
-			zenity.OKLabel("Reset"),
-			zenity.ExtraButton("Force save"),
-			zenity.CancelLabel("Cancel"),
-		)...)
-	if res == zenity.ErrCanceled {
-		return serverOptions(s)
-	} else if res == zenity.ErrExtraButton {
-		if err := lib.UnfuckCommit(s.BaseDir); err != nil {
-			return err
-		}
+	options := []string{"HELP! - Open documentation", "Manual save", "Reset from origin", "Remove lock"}
+
+	res, err := zenity.List("Unfuck menu: BE CAREFUL!", options, defaultZenityOptions...)
+
+	if err == zenity.ErrCanceled {
 		return serverOptions(s)
 	}
 
-	if err := lib.UnfuckReset(s.BaseDir); err != nil {
+	switch res {
+	case options[0]:
+		err = open.Start("https://github.com/billy4479/server-tool/blob/master/Unfuck.md")
+		break
+	case options[1]:
+		err = lib.UnfuckCommit(s.BaseDir)
+		break
+	case options[2]:
+		err = lib.UnfuckReset(s.BaseDir)
+		break
+	case options[3]:
+		err = lib.UnfuckRemoveLock(s.BaseDir)
+		break
+	}
+
+	if err != nil {
 		return err
 	}
+
 	return serverOptions(s)
 }
 
