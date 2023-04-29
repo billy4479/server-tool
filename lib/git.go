@@ -39,6 +39,8 @@ func UnfuckReset(baseDir string) error {
 		return nil
 	}
 
+	L.Warn.Println("Unfuck: reset")
+
 	err := RunCmdPretty(baseDir, "git", "reset", "--hard")
 	if err != nil {
 		return err
@@ -75,6 +77,8 @@ func UnfuckCommit(baseDir string) error {
 		return nil
 	}
 
+	L.Warn.Println("Unfuck: manual commit")
+
 	// Remove lock if present
 	err := RunCmdPretty(baseDir, "git", "rm", "-f", "--ignore-unmatch", lockFileName)
 	if err != nil {
@@ -99,6 +103,8 @@ func UnfuckRemoveLock(baseDir string) error {
 	if !C.Git.Enable {
 		return nil
 	}
+
+	L.Warn.Println("Unfuck: remove lock")
 
 	err := RunCmdPretty(baseDir, "git", "rm", "-f", "--ignore-unmatch", lockFileName)
 	if err != nil {
