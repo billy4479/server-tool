@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type ServerType uint8
@@ -17,6 +18,8 @@ const (
 	Vanilla ServerType = iota
 	Fabric
 )
+
+var serverStartTime *time.Time = nil
 
 type Server struct {
 	Name    string
@@ -114,6 +117,10 @@ func runJar(s *Server, gui bool, javaProgress JavaDownloadProgress) error {
 }
 
 func (s *Server) Start(gui bool, javaProgress JavaDownloadProgress, gitProgress GitProgress) error {
+
+	serverStartTime = new(time.Time)
+	*serverStartTime = time.Now()
+
 	if s.HasGit && C.Git.Enable {
 		if err := PreFn(s.BaseDir, gitProgress); err != nil {
 			return err
@@ -133,6 +140,8 @@ func (s *Server) Start(gui bool, javaProgress JavaDownloadProgress, gitProgress 
 			return err
 		}
 	}
+
+	serverStartTime = nil
 
 	return nil
 }

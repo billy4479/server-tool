@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 var (
@@ -161,7 +162,7 @@ func PreFn(baseDir string, progress GitProgress) (err error) {
 				return err
 			}
 
-			err = RunCmdPretty(baseDir, "git", "commit", "-m", "Pushing lock file")
+			err = RunCmdPretty(baseDir, "git", "commit", "-m", "Acquiring lock")
 			if err != nil {
 				return err
 			}
@@ -220,7 +221,15 @@ func PostFn(baseDir string, progress GitProgress) (err error) {
 	}
 
 	dialog("Committing files")
-	err = RunCmdPretty(baseDir, "git", "commit", "--allow-empty-message", "-m", "")
+
+	msg := ""
+	if serverStartTime != nil {
+		msg = fmt.Sprintf("Server started at %s, time played: %s", serverStartTime.Format(time.RFC3339), time.Now().Sub(*serverStartTime).String())
+	} else {
+		msg = "Unknown server start time"
+	}
+
+	err = RunCmdPretty(baseDir, "git", "commit", "-m", msg)
 	if err != nil {
 		return err
 	}
