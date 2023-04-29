@@ -94,6 +94,13 @@ func UnfuckCommit(baseDir string) error {
 	return err
 }
 
+func getGitUsername() (string, error) {
+	cmd := exec.Command("git", "config", "user.name")
+	name, err := cmd.Output()
+	addSysProcAttr(cmd)
+	return strings.TrimSpace(string(name)), err
+}
+
 func PreFn(baseDir string, progress GitProgress) (err error) {
 	if !C.Git.Enable {
 		return nil
@@ -132,21 +139,18 @@ func PreFn(baseDir string, progress GitProgress) (err error) {
 		dialog("Creating lockfile")
 		if C.Git.UseLockFile {
 			{
+				out, err := getGitUsername()
+				if err != nil {
+					return err
+				}
+
 				f, err := os.Create(lockFilePath)
 				if err != nil {
 					return err
 				}
 				defer f.Close()
 
-				cmd := exec.Command("git", "config", "user.name")
-				addSysProcAttr(cmd)
-				cmd.Stderr = os.Stderr
-				out, err := cmd.Output()
-				if err != nil {
-					return err
-				}
-
-				_, err = f.Write(out)
+				_, err = f.WriteString(out)
 				if err != nil {
 					return err
 				}
