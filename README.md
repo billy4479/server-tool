@@ -38,10 +38,9 @@ Download the one for your operating system.
 
 ## Configuring
 
-This tool uses a file called `server-tool.yml`
-to store it's settings.
+This tool uses a file called `server-tool.yml` to store it's settings.
 
-Depending on your operating system this fila can be found in different places:
+Depending on your operating system this file can be found in different places:
 
 - On Windows: `%AppData%\server-tool\server-tool.yml`
 - On MacOS: `$HOME/Library/Application Support`
