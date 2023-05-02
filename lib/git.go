@@ -169,14 +169,15 @@ func PreFn(baseDir string, progress GitProgress) (err error) {
 				if err != nil {
 					return err
 				}
+				L.Debug.Printf("Creating lock file for \"%s\"\n", out)
 
 				f, err := os.Create(lockFilePath)
 				if err != nil {
 					return err
 				}
-				defer f.Close()
 
 				_, err = f.WriteString(out)
+				f.Close()
 				if err != nil {
 					return err
 				}
@@ -249,9 +250,12 @@ func PostFn(baseDir string, progress GitProgress) (err error) {
 
 	msg := ""
 	if serverStartTime != nil {
-		msg = fmt.Sprintf("Server started at %s, time played: %s", serverStartTime.Format(time.RFC3339), time.Now().Sub(*serverStartTime).String())
+		msg = fmt.Sprintf("Server started at %s\n\nTime played: %s\nserver-tool version: %s",
+			serverStartTime.Format(time.RFC3339),
+			time.Since(*serverStartTime).String(),
+			Version)
 	} else {
-		msg = "Unknown server start time"
+		msg = fmt.Sprintf("Unknown server start time\n\nserver-tool version: %s", Version)
 	}
 
 	err = RunCmdPretty(baseDir, "git", "commit", "-m", msg)
