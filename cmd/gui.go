@@ -1,14 +1,11 @@
 package cmd
 
 import (
-	"bytes"
 	"crypto/sha256"
 	_ "embed"
 	"fmt"
-	"io"
 	"os"
 	"path"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -22,10 +19,6 @@ import (
 var icon []byte
 var iconHash = sha256.Sum256(icon)
 
-var defaultZenityOptions = []zenity.Option{
-	zenity.Title(fmt.Sprintf("Server Tool %s", lib.Version)),
-}
-
 func moreOptions() error {
 	options := []string{
 		"Open server folder",
@@ -35,8 +28,7 @@ func moreOptions() error {
 		"Wipe manifest cache",
 		"Wipe java cache",
 	}
-	res, err := zenity.List("Advanced options", options, defaultZenityOptions...)
-	lib.L.Debug.Printf("[+] zenity: \"%s\", err:%v\n", res, err)
+	res, err := zenityList("Advanced options", options, defaultZenityOptions...)
 	if err != nil || len(res) == 0 {
 		return runGui()
 	}
@@ -68,7 +60,7 @@ func moreOptions() error {
 func unfuck(s *lib.Server) error {
 	options := []string{"HELP! - Open documentation", "Manual save", "Reset from origin", "Remove lock"}
 
-	res, err := zenity.List("Unfuck menu: BE CAREFUL!", options, defaultZenityOptions...)
+	res, err := zenityList("Unfuck menu: BE CAREFUL!", options, defaultZenityOptions...)
 
 	if err == zenity.ErrCanceled {
 		return serverOptions(s)
@@ -77,16 +69,12 @@ func unfuck(s *lib.Server) error {
 	switch res {
 	case options[0]:
 		err = open.Start("https://github.com/billy4479/server-tool/blob/master/Unfuck.md")
-		break
 	case options[1]:
 		err = lib.UnfuckCommit(s.BaseDir)
-		break
 	case options[2]:
 		err = lib.UnfuckReset(s.BaseDir)
-		break
 	case options[3]:
 		err = lib.UnfuckRemoveLock(s.BaseDir)
-		break
 	}
 
 	if err != nil {
@@ -109,7 +97,7 @@ func (p *manifestProgressGUI) SetTotal(total int) {
 	defer p.Unlock()
 
 	p.total = total
-	dialog, err := zenity.Progress(append(defaultZenityOptions, zenity.MaxValue(total), zenity.NoCancel())...)
+	dialog, err := zenityProgress(append(defaultZenityOptions, zenity.MaxValue(total), zenity.NoCancel())...)
 
 	if err != nil {
 		panic(err)
@@ -163,8 +151,7 @@ func chooseServer() (*lib.Server, error) {
 		serverNames = append(serverNames, v.PrettyName())
 	}
 
-	res, err := zenity.List("Select a server to start", serverNames, append(defaultZenityOptions, zenity.ExtraButton("More options"))...)
-	lib.L.Debug.Printf("[+] zenity: \"%s\", err:%v\n", res, err)
+	res, err := zenityList("Select a server to start", serverNames, append(defaultZenityOptions, zenity.ExtraButton("More options"))...)
 
 	if err != nil {
 		if err == zenity.ErrExtraButton {
@@ -216,8 +203,7 @@ func createNew() (*lib.Server, error) {
 }
 
 func chooseName() string {
-	name, err := zenity.Entry("Choose a name for the server", defaultZenityOptions...)
-	lib.L.Debug.Printf("[+] zenity: \"%s\", err:%v\n", name, err)
+	name, _ := zenityEntry("Choose a name for the server", defaultZenityOptions...)
 	return name
 }
 
@@ -232,11 +218,9 @@ func chooseVersion() (*lib.VersionInfo, error) {
 			versionNames = append(versionNames, v.ID)
 		}
 	}
-	res, err := zenity.List("Choose a minecraft version", versionNames, append(defaultZenityOptions, zenity.ExtraButton("More versions"))...)
-	lib.L.Debug.Printf("[+] zenity: \"%s\", err:%v\n", res, err)
+	res, err := zenityList("Choose a minecraft version", versionNames, append(defaultZenityOptions, zenity.ExtraButton("More versions"))...)
 	if err == zenity.ErrExtraButton {
-		ver, err := zenity.Entry("Select a Minecraft version", defaultZenityOptions...)
-		lib.L.Debug.Printf("[+] zenity: \"%s\", err:%v\n", ver, err)
+		ver, err := zenityEntry("Select a Minecraft version", defaultZenityOptions...)
 		if err != nil {
 			return chooseVersion()
 		}
@@ -261,49 +245,6 @@ func chooseVersion() (*lib.VersionInfo, error) {
 	return chooseVersion()
 }
 
-func setupIcon() error {
-	iconPath := filepath.Join(lib.C.Application.CacheDir, "icon.png")
-
-	writeIcon := func() error {
-		lib.L.Debug.Printf("Writing icon at %s\n", iconPath)
-		f, err := os.Create(iconPath)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-
-		_, err = f.Write(icon)
-		return err
-	}
-
-	f, err := os.Open(iconPath)
-	if err != nil {
-		err = writeIcon()
-		if err != nil {
-			return err
-		}
-	} else {
-		defer f.Close()
-		hasher := sha256.New()
-		_, err := io.Copy(hasher, f)
-		if err != nil {
-			return err
-		}
-		hash := hasher.Sum(nil)
-
-		if !bytes.Equal(hash, iconHash[:]) {
-			f.Close()
-			err := writeIcon()
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	defaultZenityOptions = append(defaultZenityOptions, zenity.WindowIcon(iconPath))
-	return nil
-}
-
 type javaDownloadProgressGUI struct {
 	total   string
 	current uint64
@@ -315,7 +256,7 @@ func (p *javaDownloadProgressGUI) OnDownloadStart(size uint64, name string) {
 	p.total = humanize.Bytes(size)
 	p.name = name
 	var err error
-	p.dialog, err = zenity.Progress(append(defaultZenityOptions, zenity.MaxValue(int(size)), zenity.NoCancel())...)
+	p.dialog, err = zenityProgress(append(defaultZenityOptions, zenity.MaxValue(int(size)), zenity.NoCancel())...)
 	if err != nil {
 		panic(err)
 	}
@@ -345,7 +286,7 @@ func (p *javaDownloadProgressGUI) OnDownloadFinish() {
 func (p *javaDownloadProgressGUI) OnExtractionStart(name string) {
 	p.name = name
 	var err error
-	p.dialog, err = zenity.Progress(append(defaultZenityOptions, zenity.Pulsate(), zenity.NoCancel())...)
+	p.dialog, err = zenityProgress(append(defaultZenityOptions, zenity.Pulsate(), zenity.NoCancel())...)
 	if err != nil {
 		panic(err)
 	}
@@ -365,7 +306,7 @@ func (p *javaDownloadProgressGUI) OnExtractionDone() {
 }
 
 func gitProgressGUI() func(string) {
-	dialog, err := zenity.Progress(append(defaultZenityOptions, zenity.Pulsate(), zenity.NoCancel())...)
+	dialog, err := zenityProgress(append(defaultZenityOptions, zenity.Pulsate(), zenity.NoCancel())...)
 
 	// Unsupported: don't show any gui.
 	if err != nil {
@@ -376,7 +317,7 @@ func gitProgressGUI() func(string) {
 
 	return func(s string) {
 		if isComplete {
-			lib.L.Warn.Println("[?] GitProgressGUI: calling function after dialog closed")
+			lib.L.Warn.Println("GitProgressGUI: calling function after dialog closed")
 			return
 		}
 
@@ -386,20 +327,19 @@ func gitProgressGUI() func(string) {
 		} else {
 			err := dialog.Text(s)
 			if err != nil {
-				lib.L.Warn.Println("[?] GitProgressGUI:", err)
+				lib.L.Warn.Println("GitProgressGUI:", err)
 			}
 		}
 	}
 }
 
 func serverOptions(s *lib.Server) error {
-	res := zenity.Question(fmt.Sprintf("Server \"%s\" was selected", s.PrettyName()),
+	res := zenityQuestion(fmt.Sprintf("Server \"%s\" was selected", s.PrettyName()),
 		append(defaultZenityOptions,
 			zenity.OKLabel("Run"),
 			zenity.CancelLabel("Cancel"),
 			zenity.ExtraButton("More options"),
 		)...)
-	lib.L.Debug.Printf("[+] zenity: %v\n", res)
 
 	switch res {
 	case nil:
@@ -409,8 +349,7 @@ func serverOptions(s *lib.Server) error {
 	case zenity.ErrExtraButton:
 		{
 			options := []string{"Run", "Open folder", "Unfuck", "Install Fabric"}
-			res, err := zenity.List("More options", options, defaultZenityOptions...)
-			lib.L.Debug.Printf("[+] zenity: \"%s\", err:%v\n", res, err)
+			res, err := zenityList("More options", options, defaultZenityOptions...)
 			if err != nil || len(res) == 0 {
 				return serverOptions(s)
 			}
@@ -422,7 +361,7 @@ func serverOptions(s *lib.Server) error {
 			case options[2]:
 				return unfuck(s)
 			case options[3]:
-				_ = zenity.Info("Not yet implemented", defaultZenityOptions...)
+				_ = zenityInfo("Not yet implemented", defaultZenityOptions...)
 				return nil
 			}
 		}
@@ -439,14 +378,14 @@ func checkUpdates() error {
 
 	if needUpdate {
 		if lib.C.Application.AutoUpdate {
-			err = zenity.Question("An update was found! Update now?",
+			err = zenityQuestion("An update was found! Update now?",
 				append(defaultZenityOptions, zenity.OKLabel("Update"), zenity.CancelLabel("I'll do it later"))...)
 
 			if err == nil {
 				if err = lib.DoUpdate(newVersionURL); err != nil {
 					panic(err)
 				}
-				_ = zenity.Info("Restart the application to apply the update")
+				_ = zenityInfo("Restart the application to apply the update")
 				os.Exit(0)
 			}
 		} else {
@@ -458,10 +397,22 @@ func checkUpdates() error {
 }
 
 func runGui() (err error) {
+	lib.L.Info.Printf("server-tool %s\n", lib.Version)
+	lib.DetectGitAndPrint()
 
 	defer func() {
 		if err != nil {
-			zenity.Error(fmt.Sprintf("An error has occurred: %v", err), defaultZenityOptions...)
+			result := zenityError(
+				fmt.Sprintf("An error has occurred: %v", err),
+				append(defaultZenityOptions, zenity.ExtraButton("Open log file"))...,
+			)
+
+			if result == zenity.ErrExtraButton {
+				err := open.Start(lib.L.GetCurrentLogPath())
+				if err != nil {
+					lib.L.Error.Println(err)
+				}
+			}
 		}
 	}()
 
@@ -470,7 +421,7 @@ func runGui() (err error) {
 	}
 
 	if err = checkUpdates(); err != nil {
-		lib.L.Warn.Printf("[?] An error has occurred while checking for updates: %v", err)
+		lib.L.Warn.Printf("An error has occurred while checking for updates: %v", err)
 		err = nil
 	}
 

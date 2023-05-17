@@ -14,7 +14,7 @@ var (
 	hasGit = false
 )
 
-func DetectGit() (string, error) {
+func detectGit() (string, error) {
 	cmd := exec.Command("git", "--version")
 	addSysProcAttr(cmd)
 	out, err := cmd.CombinedOutput()
@@ -24,6 +24,17 @@ func DetectGit() (string, error) {
 
 	hasGit = true
 	return strings.Split(string(out), " ")[2], nil
+}
+
+func DetectGitAndPrint() {
+	if C.Git.Enable {
+		gitVersion, err := detectGit()
+		if err != nil {
+			L.Warn.Println("Git not detected!")
+		} else {
+			L.Info.Printf("Found Git %s", gitVersion)
+		}
+	}
 }
 
 var (
@@ -219,7 +230,7 @@ func hasRemotes(baseDir string) (bool, error) {
 	}
 
 	remotes := strings.Split(strings.ReplaceAll(string(out), "\r", ""), "\n")
-	L.Debug.Printf("Found the following remotes %v (%d)", remotes, len(remotes))
+	L.Debug.Printf("Found the following remotes %v (%d)\n", remotes, len(remotes))
 
 	return len(remotes) != 1, nil
 }

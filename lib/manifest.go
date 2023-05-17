@@ -108,7 +108,7 @@ func updateVersionInfos(progress ManifestDownloadProgress) ([]VersionInfo, error
 				infos.Lock()
 				infos.err = err
 
-				L.Error.Printf("[!] An error has occurred while downloading %s: %v\n", id, err)
+				L.Error.Printf("An error has occurred while downloading %s: %v\n", id, err)
 
 				infos.Unlock()
 				return
@@ -120,7 +120,7 @@ func updateVersionInfos(progress ManifestDownloadProgress) ([]VersionInfo, error
 				infos.Lock()
 				infos.err = err
 
-				L.Error.Printf("[!] An error has occurred while parsing %s: %v\n", id, infos.err)
+				L.Error.Printf("An error has occurred while parsing %s: %v\n", id, infos.err)
 
 				infos.Unlock()
 				return
@@ -139,7 +139,7 @@ func updateVersionInfos(progress ManifestDownloadProgress) ([]VersionInfo, error
 			}
 
 			if !okSha {
-				L.Warn.Printf("[?] Version %s has no SHA1. Skipping...\n", id)
+				L.Warn.Printf("Version %s has no SHA1. Skipping...\n", id)
 				return
 			}
 
@@ -203,16 +203,16 @@ func GetVersionInfos(progress ManifestDownloadProgress) ([]VersionInfo, error) {
 	manifestStat, err := os.Stat(ManifestPath())
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			L.Info.Println("[+] Version manifests are missing. Dowloading them again...")
+			L.Info.Println("Version manifests are missing. Downloading them again...")
 
 			return updateVersionInfos(progress)
 		}
-		L.Error.Printf("[!] Cannot stat %s", ManifestPath())
+		L.Error.Printf("Cannot stat %s", ManifestPath())
 		return nil, err
 	}
 
 	if manifestStat.ModTime().Add(expireTime).Before(time.Now()) {
-		L.Info.Println("[+] Version manifests are expired. Dowloading them again...")
+		L.Info.Println("Version manifests are expired. Downloading them again...")
 		return updateVersionInfos(progress)
 	}
 
@@ -225,7 +225,7 @@ func GetVersionInfos(progress ManifestDownloadProgress) ([]VersionInfo, error) {
 	versionInfos := []VersionInfo{}
 	err = json.NewDecoder(manifestFile).Decode(&versionInfos)
 	if err != nil {
-		L.Info.Println("[+] Version manifests are corrupted. Dowloading them again...")
+		L.Info.Println("Version manifests are corrupted. Downloading them again...")
 		return updateVersionInfos(progress)
 	}
 	return versionInfos, nil

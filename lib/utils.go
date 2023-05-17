@@ -41,7 +41,7 @@ func RunCmdPretty(workDir string, name string, args ...string) error {
 			cmdLine += " " + arg
 		}
 
-		L.Info.Printf("[+] Running \"%s\"\n", cmdLine)
+		L.Debug.Printf("Running \"%s\"\n", cmdLine)
 	}
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = L.Writer
@@ -50,20 +50,20 @@ func RunCmdPretty(workDir string, name string, args ...string) error {
 	cmd.Dir = workDir
 	addSysProcAttr(cmd)
 
-	L.Info.Println("[+] Start of command output")
+	L.Info.Println("---!--- Start of command output ---!---")
 	err := cmd.Run()
-	L.Info.Println("[+] End of command output")
+	L.Info.Println("---!--- End of command output ---!---")
 
 	if err != nil {
 		if cmd.ProcessState == nil {
 			return err
 		}
 		if !cmd.ProcessState.Success() {
-			L.Warn.Printf("[+] Command exited with code %d\n", cmd.ProcessState.ExitCode())
+			L.Warn.Printf("Command exited with code %d\n", cmd.ProcessState.ExitCode())
 			return ErrExitedAbnormally
 		}
 	}
 
-	L.Ok.Println("[+] Command exited with code 0")
+	L.Ok.Println("Command exited with code 0")
 	return nil
 }

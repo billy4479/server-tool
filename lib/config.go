@@ -32,7 +32,6 @@ var (
 
 func GetConfigPath() (configPath string, configDir string, err error) {
 	configPathOverride := os.Getenv("CONFIG_PATH")
-	configDir = ""
 	if configPathOverride != "" {
 		configPath = configPathOverride
 		configDir = filepath.Dir(configPath)
@@ -83,7 +82,8 @@ func LoadConfig() error {
 		return nil
 	}
 
-	// L.Info.Printf("[+] Loading config at %s\n", configPath)
+	// The logger is not yet initialized at this point
+	// L.Debug.Printf("Loading config at %s\n", configPath)
 
 	f, err := os.Open(configPath)
 	if err != nil {

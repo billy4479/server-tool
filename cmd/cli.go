@@ -50,7 +50,7 @@ func runCli() error {
 				Name:    "version",
 				Aliases: []string{"v"},
 				Action: func(ctx *cli.Context) error {
-					lib.L.Debug.Printf("server-tool %s\n", lib.Version)
+					fmt.Printf("server-tool %s\n", lib.Version)
 					return nil
 				},
 			},
@@ -72,6 +72,9 @@ func runCli() error {
 				Aliases: []string{"l"},
 				Usage:   "List available servers",
 				Action: func(ctx *cli.Context) error {
+					lib.L.Info.Printf("server-tool %s\n", lib.Version)
+					lib.DetectGitAndPrint()
+
 					servers, err := lib.FindServers(&manifestProgressCLI{})
 					if err != nil {
 						return err
@@ -95,6 +98,9 @@ func runCli() error {
 				},
 				Usage: "Run a server",
 				Action: func(ctx *cli.Context) error {
+					lib.L.Info.Printf("server-tool %s\n", lib.Version)
+					lib.DetectGitAndPrint()
+
 					servers, err := lib.FindServers(&manifestProgressCLI{})
 					if err != nil {
 						return err
@@ -123,6 +129,8 @@ func runCli() error {
 					},
 				},
 				Action: func(ctx *cli.Context) error {
+					lib.L.Info.Printf("server-tool %s\n", lib.Version)
+
 					java := ctx.Bool("java")
 					manifest := ctx.Bool("manifest")
 

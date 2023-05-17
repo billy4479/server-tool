@@ -172,15 +172,14 @@ func EnsureJavaIsInstalled(javaVersion int, progress JavaDownloadProgress) (stri
 		}
 	}
 
-	L.Warn.Printf("[?] Java %d not found! Downloading it now...\n", javaVersion)
+	L.Warn.Printf("Java %d not found! Downloading it now...\n", javaVersion)
 	err = installJava(javaVersion, progress)
 	if err != nil {
-		L.Error.Printf("[!] An error occurred while downloading Java version %d\n", javaVersion)
-		L.Info.Println(err)
+		L.Error.Printf("An error occurred while downloading Java version %d: %v\n", javaVersion, err)
 		return "", err
 	}
 
-	L.Ok.Println("[+] Done!")
+	L.Ok.Printf("Successfully installed java %d\n", javaVersion)
 
 	return fullExePath, nil
 }

@@ -70,12 +70,12 @@ var (
 )
 
 func ensureJavaPretty(s *Server, progress JavaDownloadProgress) (string, error) {
-	L.Info.Printf("[+] \"%s\" requires Java %d\n", s.Name, s.Version.JavaVersion)
+	L.Debug.Printf("\"%s\" requires Java %d\n", s.Name, s.Version.JavaVersion)
 	javaExe, err := EnsureJavaIsInstalled(s.Version.JavaVersion, progress)
 	if err != nil {
 		return "", err
 	}
-	L.Ok.Printf("[+] Java was found at \"%s\"\n", javaExe)
+	L.Ok.Printf("Java was found at \"%s\"\n", javaExe)
 	return javaExe, nil
 }
 
@@ -130,7 +130,7 @@ func (s *Server) Start(gui bool, javaProgress JavaDownloadProgress, gitProgress 
 	err := runJar(s, gui, javaProgress)
 	if err != nil {
 		if err == ErrExitedAbnormally {
-			L.Error.Println("[!] The server terminated with an error. Git will not update. Giving up, *you are on your own now*")
+			L.Error.Println("The server terminated with an error. Git will not update. You should first go figure out what happened to the server then git-unfuck")
 		}
 		return err
 	}
@@ -200,7 +200,7 @@ func FindServers(progress ManifestDownloadProgress) ([]Server, error) {
 	}
 
 	if len(servers) == 0 {
-		L.Warn.Println("[?] No server were found")
+		L.Warn.Println("No servers were found")
 	}
 
 	return servers, nil
@@ -246,7 +246,7 @@ func CreateServer(s *Server) error {
 		return err
 	}
 
-	L.Info.Printf("[+] Downloading jar for version %s\n", s.Version.ID)
+	L.Info.Printf("Downloading server jar for version %s\n", s.Version.ID)
 	jar, err := os.Create(filepath.Join(s.BaseDir, "server.jar"))
 	if err != nil {
 		return err
@@ -264,11 +264,9 @@ func CreateServer(s *Server) error {
 		return err
 	}
 
-	L.Ok.Println("[+] Done!")
+	L.Ok.Println("Done!")
 
 	if !C.Minecraft.NoEULA {
-		L.Info.Println("[+] Accepting the EULA...")
-
 		eula, err := os.Create(filepath.Join(s.BaseDir, "eula.txt"))
 		if err != nil {
 			return err
@@ -279,7 +277,10 @@ func CreateServer(s *Server) error {
 			return err
 		}
 
-		L.Ok.Println("[+] Done!")
+		L.Ok.Println("Eula accepted")
 	}
+
+	L.Ok.Println("[+] Server created successfully!")
+
 	return nil
 }

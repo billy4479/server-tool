@@ -19,9 +19,9 @@ func DoUpdate(newVersionURL string) error {
 	defer resp.Body.Close()
 	err = selfupdate.Apply(resp.Body, selfupdate.Options{})
 	if err != nil {
-		L.Warn.Printf("[?] Update failed: %v\n", err)
+		L.Warn.Printf("Update failed: %v\n", err)
 		if err = selfupdate.RollbackError(err); err != nil {
-			L.Error.Println("[!] Rolling back also failed, you're on your own now")
+			L.Error.Println("Rolling back the update also failed, you're on your own now")
 			return err
 		}
 		// We return nil here anyways because a failing update shouldn't crash the app
@@ -41,7 +41,7 @@ func CheckUpdates() (bool, string, error) {
 
 	// Comment to test updates
 	if Version == "dev" || strings.Contains(Version, "-") {
-		L.Info.Println("[+] This is a development build, skipping updates.")
+		L.Debug.Println("This is a development build, skipping updates.")
 		return false, "", nil
 	}
 
@@ -76,7 +76,13 @@ func CheckUpdates() (bool, string, error) {
 			}
 
 			if remote > current {
-				return true, downloadURL, nil
+				L.Ok.Println("A new update was found")
+				if C.Application.AutoUpdate {
+					return true, downloadURL, nil
+				} else {
+					L.Info.Printf("Automatic updates are disabled, visit \"%s\" to download the update\n", downloadURL)
+					return false, "", nil
+				}
 			}
 
 			// return true, downloadURL, nil // Uncomment to test updates

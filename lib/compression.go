@@ -62,7 +62,7 @@ func Untargz(input io.Reader, dest string, skipName string, onExtractionProgress
 			if err != nil {
 				return err
 			}
-		case tar.TypeReg, tar.TypeRegA:
+		case tar.TypeReg:
 			// write a file
 			file, err := os.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fs.FileMode(header.Mode))
 			if err != nil {

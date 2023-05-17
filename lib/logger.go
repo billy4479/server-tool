@@ -26,6 +26,21 @@ type Logger struct {
 
 	Writer io.Writer
 	file   *os.File
+	path   string
+}
+
+type LogType uint8
+
+const (
+	debug = iota
+	info
+	ok
+	warn
+	critical
+)
+
+func (l *Logger) GetCurrentLogPath() string {
+	return l.path
 }
 
 func (l *Logger) Close() {
@@ -57,53 +72,81 @@ func SetupLogger() error {
 		return err
 	}
 
-	logFile, err := os.Create(filepath.Join(GetLogsPath(),
+	path := filepath.Join(
+		GetLogsPath(),
 		strings.ReplaceAll(time.Now().Format(time.RFC3339), ":", "-")+".log",
-	))
+	)
+	logFile, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 
 	writer := io.MultiWriter(logFile, os.Stdout)
-	makeSink := func(c *color.Color) sink {
+	makeSink := func(c *color.Color, logType LogType) sink {
+		level := ""
+		switch logType {
+		case debug:
+			level = "-"
+		case info:
+			level = "+"
+		case ok:
+			level = "*"
+		case warn:
+			level = "!"
+		case critical:
+			level = "!!!"
+		}
+
+		getPrefix := func() string {
+			t := time.Now()
+			return fmt.Sprintf("[%02d:%02d:%02d][%s]: ", t.Hour(), t.Minute(), t.Second(), level)
+		}
+
 		if c == nil {
 			return sink{
 				Print: func(i ...interface{}) {
-					fmt.Fprint(writer, i...)
+					fmt.Fprint(writer, getPrefix()+fmt.Sprint(i...))
 				},
 				Printf: func(s string, i ...interface{}) {
-					fmt.Fprintf(writer, s, i...)
+					fmt.Fprint(writer, getPrefix()+fmt.Sprintf(s, i...))
 				},
 				Println: func(i ...interface{}) {
-					fmt.Fprintln(writer, i...)
+					fmt.Fprint(writer, getPrefix()+fmt.Sprintln(i...))
 				},
 			}
 		} else {
 			return sink{
 				Print: func(i ...interface{}) {
-					c.Print(i...)
-					fmt.Fprint(logFile, i...)
+					s := getPrefix() + fmt.Sprint(i...)
+
+					c.Print(s)
+					fmt.Fprint(logFile, s)
 				},
-				Printf: func(s string, i ...interface{}) {
-					c.Printf(s, i...)
-					fmt.Fprintf(logFile, s, i...)
+				Printf: func(format string, i ...interface{}) {
+					s := getPrefix() + fmt.Sprintf(format, i...)
+
+					c.Print(s)
+					fmt.Fprint(logFile, s)
 				},
 				Println: func(i ...interface{}) {
-					c.Println(i...)
-					fmt.Fprintln(logFile, i...)
+					s := getPrefix() + fmt.Sprintln(i...)
+
+					c.Print(s)
+					fmt.Fprint(logFile, s)
 				},
 			}
 		}
 	}
 
 	L = &Logger{
-		Debug: makeSink(nil),
-		Info:  makeSink(color.New(color.FgBlue)),
-		Ok:    makeSink(color.New(color.FgGreen)),
-		Warn:  makeSink(color.New(color.FgYellow)),
-		Error: makeSink(color.New(color.FgRed)),
+		Debug: makeSink(nil, debug),
+		Info:  makeSink(color.New(color.FgBlue), info),
+		Ok:    makeSink(color.New(color.FgGreen), ok),
+		Warn:  makeSink(color.New(color.FgYellow), warn),
+		Error: makeSink(color.New(color.FgRed), critical),
 
 		file:   logFile,
+		path:   path,
 		Writer: writer,
 	}
 	return nil

@@ -16,7 +16,7 @@ func Run() error {
 
 	err := lib.LoadConfig()
 	if err != nil {
-		lib.L.Warn.Println("[?] An error has occurred while loading the config file. Falling back on the default...")
+		lib.L.Warn.Println("An error has occurred while loading the config file. Falling back on the default:", err)
 		if err = lib.WriteConfig(); err != nil {
 			return err
 		}
@@ -27,24 +27,15 @@ func Run() error {
 	}
 	defer lib.L.Close()
 
-	if lib.C.Git.Enable {
-		gitVersion, err := lib.DetectGit()
-		if err != nil {
-			lib.L.Warn.Println("[?] Git not detected!")
-		} else {
-			lib.L.Info.Printf("[+] Found Git %s", gitVersion)
-		}
-	}
-
 	defer func() {
 		if err = lib.WriteConfig(); err != nil {
-			lib.L.Warn.Printf("[?] Error while saving config: %v", err)
+			lib.L.Warn.Printf("Error while saving config: %v", err)
 		}
 	}()
 
 	err = runCli()
 	if err != nil {
-		lib.L.Error.Printf("[!] FATAL ERROR: %v\n", err)
+		lib.L.Error.Println(err)
 	}
 	return err
 }

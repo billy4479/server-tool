@@ -35,7 +35,7 @@ func StringOption(desc string, continueAskingUntil func(string) bool) (string, e
 	}
 
 	for !continueAskingUntil(input) {
-		lib.L.Info.Printf("[?] %s: ", desc)
+		color.New(color.FgBlue).Printf("[?] %s: ", desc)
 		var err error
 		input, err = readLine()
 		if err != nil {
@@ -52,11 +52,11 @@ type Option struct {
 	PrintFn     func(position int, noDefault bool)
 }
 
-var ErrNotEnoughoptions = errors.New("At least one option is required")
+var ErrNotEnoughOptions = errors.New("At least one option is required")
 
 func makeMenu(noDefault bool, options ...Option) (*Option, error) {
 	if len(options) == 0 {
-		return nil, ErrNotEnoughoptions
+		return nil, ErrNotEnoughOptions
 	}
 
 	run := true
@@ -73,9 +73,9 @@ func makeMenu(noDefault bool, options ...Option) (*Option, error) {
 			}
 		}
 		if noDefault {
-			lib.L.Info.Printf("[?] Your option [1-%d]: ", len(options))
+			color.New(color.FgBlue).Printf("[?] Your option [1-%d]: ", len(options))
 		} else {
-			lib.L.Info.Printf("[?] Your option [0-%d] (default: 0): ", len(options)-1)
+			color.New(color.FgBlue).Printf("[?] Your option [0-%d] (default: 0): ", len(options)-1)
 		}
 		input, err := readLine()
 		if err != nil {
@@ -90,21 +90,21 @@ func makeMenu(noDefault bool, options ...Option) (*Option, error) {
 
 			if n >= len(options) || n < 0 {
 				if noDefault {
-					lib.L.Warn.Printf("[?] Option %d was not found.\n", inputN)
+					color.Yellow("[?] Option %d was not found.", inputN)
 					continue
 				}
-				lib.L.Warn.Printf("[?] Option %d was not found, falling back on default.\n", inputN)
+				color.Yellow("[?] Option %d was not found, falling back on default.", inputN)
 				return &options[0], nil
 			}
 
 			return &options[n], nil
 		} else if noDefault {
-			lib.L.Warn.Println("[?] Invalid option.")
+			color.Yellow("[?] Invalid option.")
 		}
 		run = noDefault
 	}
 
-	lib.L.Ok.Printf("[+] Default option selected.\n")
+	color.Green("[+] Default option selected.")
 	return &options[0], nil
 }
 
@@ -187,11 +187,11 @@ func (p *javaDownloadProgressTUI) OnDownloadStart(size uint64, name string) {
 
 func (p *javaDownloadProgressTUI) OnDownloadProgress(n int64) {
 	p.current += uint64(n)
-	lib.L.Info.Printf("%s[+] Downloading %s (%s/%s)", RESET_LINE, p.name, humanize.Bytes(p.current), p.total)
+	fmt.Printf("%s[+] Downloading %s (%s/%s)", RESET_LINE, p.name, humanize.Bytes(p.current), p.total)
 }
 
 func (p *javaDownloadProgressTUI) OnDownloadFinish() {
-	lib.L.Ok.Printf("%s[+] %s Downloaded (%s)\n", RESET_LINE, p.name, humanize.Bytes(p.current))
+	color.Green("%s[+] %s Downloaded (%s)", RESET_LINE, p.name, humanize.Bytes(p.current))
 }
 
 func (p *javaDownloadProgressTUI) OnExtractionStart(name string) {
@@ -199,50 +199,48 @@ func (p *javaDownloadProgressTUI) OnExtractionStart(name string) {
 }
 
 func (p *javaDownloadProgressTUI) OnExtractionProgress(name string) {
-	lib.L.Info.Printf("%s[+] Extracting %s (%s)", RESET_LINE, p.name, name)
+	fmt.Printf("%s[+] Extracting %s (%s)", RESET_LINE, p.name, name)
 }
 
 func (p *javaDownloadProgressTUI) OnExtractionDone() {
-	lib.L.Ok.Printf("%s[+] %s extracted successfully\n", RESET_LINE, p.name)
+	color.Green("%s[+] %s extracted successfully", RESET_LINE, p.name)
 }
 
 func runTui() error {
+	lib.L.Info.Printf("server-tool %s\n", lib.Version)
+	lib.DetectGitAndPrint()
+
 	needUpdate, newVersionURL, err := lib.CheckUpdates()
 	if err != nil {
 		return err
 	}
 
 	if needUpdate {
-		lib.L.Ok.Println("[?] An update was found!")
-		if lib.C.Application.AutoUpdate {
-			opt, err := makeMenu(false,
-				Option{
-					Description: "Yes, update now",
-					Action: func() error {
-						return lib.DoUpdate(newVersionURL)
-					},
+		opt, err := makeMenu(false,
+			Option{
+				Description: "Yes, update now",
+				Action: func() error {
+					return lib.DoUpdate(newVersionURL)
 				},
-				Option{
-					Description: "No, I'll do it later",
-					Action: func() error {
-						lib.L.Ok.Printf("Update delayed, for a manual update visit %s\n", newVersionURL)
-						return nil
-					},
-				})
-			if err != nil {
-				return err
-			}
-			if err = opt.Action(); err != nil {
-				// Update failed.
-				panic(err)
-			}
-			return fmt.Errorf("Restart the application to apply the update")
-		} else {
-			lib.L.Info.Printf("Automatic updates are disabled, visit %s to download the update\n", newVersionURL)
+			},
+			Option{
+				Description: "No, I'll do it later",
+				Action: func() error {
+					fmt.Printf("Update delayed, for a manual update visit \"%s\"\n", newVersionURL)
+					return nil
+				},
+			})
+		if err != nil {
+			return err
 		}
+		if err = opt.Action(); err != nil {
+			// Update failed, we try not to crash
+			lib.L.Error.Println(err)
+		}
+		return fmt.Errorf("Restart the application to apply the update")
 	}
 
-	lib.L.Ok.Println("[?] What do we do?")
+	color.Green("[?] What do we do?")
 	opt, err := makeMenu(false,
 		Option{
 			Description: "Start a server",
@@ -252,7 +250,7 @@ func runTui() error {
 					return err
 				}
 
-				lib.L.Info.Println("[?] The following servers have been found:")
+				color.Blue("[?] The following servers have been found:")
 				c, err := makeMenu(true, makeServersMenuItem(servers)...)
 				if err != nil {
 					return err
@@ -286,7 +284,7 @@ func runTui() error {
 
 						if s == "?" {
 							for _, v := range versions {
-								lib.L.Debug.Printf("[+] %s\n", v.ID)
+								fmt.Printf("[+] %s\n", v.ID)
 							}
 							return false
 						}
@@ -297,7 +295,7 @@ func runTui() error {
 							}
 						}
 
-						lib.L.Warn.Printf("[?] Version %s was not found. Type ? for a list of the available versions\n", s)
+						color.Yellow("[?] Version %s was not found. Type ? for a list of the available versions", s)
 						return false
 					},
 				)
@@ -321,7 +319,6 @@ func runTui() error {
 				if err != nil {
 					return err
 				}
-				lib.L.Ok.Println("[+] Server created successfully!")
 				return nil
 			},
 		},
