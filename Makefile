@@ -25,4 +25,7 @@ build-release:
 	GOOS=linux GOARCH=amd64 $(GO) build -ldflags '$(RELEASE_LDFLAGS)' -o $(OUTPUT_DIR)/server-tool.linux
 	GOOS=windows GOARCH=amd64 $(GO) build -ldflags '$(RELEASE_LDFLAGS) -H=windowsgui' -o $(OUTPUT_DIR)/server-tool.windows.exe
 
+install: build-release
+	install -Dm755 $(OUTPUT_DIR)/server-tool.linux $(GOPATH)/bin/server-tool
+
 .PHONY: build-release
