@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/klauspost/compress/zstd"
 )
 
 type sink struct {
@@ -25,8 +26,9 @@ type Logger struct {
 	Error sink
 
 	Writer io.Writer
-	file   *os.File
-	path   string
+	Close  func()
+
+	path string
 }
 
 type LogType uint8
@@ -39,12 +41,10 @@ const (
 	critical
 )
 
+const latestName = "__latest.log"
+
 func (l *Logger) GetCurrentLogPath() string {
 	return l.path
-}
-
-func (l *Logger) Close() {
-	l.file.Close()
 }
 
 var L *Logger = nil
@@ -72,16 +72,31 @@ func SetupLogger() error {
 		return err
 	}
 
-	path := filepath.Join(
+	compressedLogPath := filepath.Join(
 		GetLogsPath(),
-		strings.ReplaceAll(time.Now().Format(time.RFC3339), ":", "-")+".log",
+		strings.ReplaceAll(time.Now().Format(time.RFC3339), ":", "-")+".log.zstd",
 	)
-	logFile, err := os.Create(path)
+
+	latestLogPath := filepath.Join(
+		GetLogsPath(), latestName,
+	)
+
+	plainLogFile, err := os.Create(latestLogPath)
 	if err != nil {
 		return err
 	}
 
-	writer := io.MultiWriter(logFile, os.Stdout)
+	compressedLogFile, err := os.Create(compressedLogPath)
+	if err != nil {
+		return err
+	}
+
+	logEncoder, err := zstd.NewWriter(compressedLogFile)
+	if err != nil {
+		return err
+	}
+
+	writer := io.MultiWriter(plainLogFile, logEncoder, os.Stdout)
 	makeSink := func(c *color.Color, logType LogType) sink {
 		level := ""
 		switch logType {
@@ -120,19 +135,19 @@ func SetupLogger() error {
 					s := getPrefix() + fmt.Sprint(i...)
 
 					c.Print(s)
-					fmt.Fprint(logFile, s)
+					fmt.Fprint(plainLogFile, s)
 				},
 				Printf: func(format string, i ...interface{}) {
 					s := getPrefix() + fmt.Sprintf(format, i...)
 
 					c.Print(s)
-					fmt.Fprint(logFile, s)
+					fmt.Fprint(plainLogFile, s)
 				},
 				Println: func(i ...interface{}) {
 					s := getPrefix() + fmt.Sprintln(i...)
 
 					c.Print(s)
-					fmt.Fprint(logFile, s)
+					fmt.Fprint(plainLogFile, s)
 				},
 			}
 		}
@@ -145,8 +160,12 @@ func SetupLogger() error {
 		Warn:  makeSink(color.New(color.FgYellow), warn),
 		Error: makeSink(color.New(color.FgRed), critical),
 
-		file:   logFile,
-		path:   path,
+		Close: func() {
+			plainLogFile.Close()
+			logEncoder.Close()
+			compressedLogFile.Close()
+		},
+		path:   latestLogPath,
 		Writer: writer,
 	}
 	return nil
