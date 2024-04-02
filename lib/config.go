@@ -23,6 +23,7 @@ type Config struct {
 		Enable      bool
 		UseLockFile bool
 	}
+	UseSystemJava bool
 }
 
 var (
@@ -73,6 +74,7 @@ func NewConfig() *Config {
 		c.Git.Enable = true
 		c.Git.UseLockFile = true
 	}
+	c.UseSystemJava = false
 	return c
 }
 

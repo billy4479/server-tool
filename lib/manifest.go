@@ -149,6 +149,12 @@ func updateVersionInfos(progress ManifestDownloadProgress) ([]VersionInfo, error
 				javaVersion = 8
 			}
 
+			if javaVersion == 16 {
+				// 1.17 uses Java 16 but it also works with Java 17.
+				// https://github.com/MultiMC/Launcher/wiki/Using-the-right-Java
+				javaVersion = 17
+			}
+
 			versionType, err := versionTypeStringToEnum(versionTypeStr)
 			if err != nil {
 				return

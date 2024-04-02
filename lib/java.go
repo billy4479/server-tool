@@ -154,6 +154,25 @@ func installJava(javaVersion int, progress JavaDownloadProgress) error {
 }
 
 func EnsureJavaIsInstalled(javaVersion int, progress JavaDownloadProgress) (string, error) {
+	if C.UseSystemJava {
+		L.Info.Println("Using system Java")
+
+		path := "java"
+		switch javaVersion {
+		case 8:
+			if p := os.Getenv("JAVA_8"); p != "" {
+				path = p
+			}
+		case 17:
+			if p := os.Getenv("JAVA_17"); p != "" {
+				path = p
+			}
+		default:
+		}
+
+		return path, nil
+	}
+
 	javaVersionString := fmt.Sprint(javaVersion)
 	err := os.MkdirAll(JavaDir(), 0700)
 	if err != nil {
