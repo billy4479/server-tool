@@ -16,7 +16,8 @@ func Run() error {
 
 	err := lib.LoadConfig()
 	if err != nil {
-		lib.L.Warn.Println("An error has occurred while loading the config file. Falling back on the default:", err)
+		// We use fmt here as logger is not initialized yet
+		fmt.Println("An error has occurred while loading the config file. Falling back on the default:", err)
 		if err = lib.WriteConfig(); err != nil {
 			return err
 		}
