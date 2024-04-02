@@ -2,3 +2,4 @@ server-tool*
 build/
 .server-tool/
 test-dir
+.direnv/
