@@ -23,7 +23,7 @@
 
       packages = {
         default = self.packages.${system}.server-tool;
-        server-tool = pkgs.callPackage ./package.nix {};
+        server-tool = pkgs.callPackage ./nix/package.nix {};
       };
     });
 }
