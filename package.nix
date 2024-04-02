@@ -1,8 +1,7 @@
 {
+  pkgs,
   lib,
   buildGoModule,
-  go,
-  gnome,
 }: let
   pname = "server-tool";
   version = "2.1.4";
@@ -10,8 +9,8 @@ in
   buildGoModule rec {
     inherit pname version;
     src = lib.cleanSource ./.;
-    nativeBuildInputs = [go];
-    buildInputs = [gnome.zenity];
+
+    ldflags = ["-X github.com/billy4479/server-tool/lib.Version=${version}"];
 
     vendorHash = "sha256-YoguesTG55+Cl5ieCF3FFQK3B6EMpjGNmEV8QHu1VKE=";
 
@@ -21,6 +20,11 @@ in
 
     installPhase = ''
       install -Dm755 ${pname} $out/bin/${pname}
+    '';
+
+    postInstall = ''
+      wrapProgram $out/bin/${pname} \
+                  --prefix PATH : ${lib.getExe pkgs.gnome.zenity}
     '';
 
     meta = with lib; {
