@@ -24,7 +24,7 @@ in
 
     postInstall = ''
       wrapProgram $out/bin/${pname} \
-                  --prefix PATH : ${lib.getExe pkgs.gnome.zenity}
+                  --prefix PATH : ${lib.makeBinPath [pkgs.gnome.zenity]}
     '';
 
     meta = with lib; {
