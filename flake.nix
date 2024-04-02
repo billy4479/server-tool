@@ -16,6 +16,9 @@
         nativeBuildInputs = with pkgs; [
           go
         ];
+        buildInputs = with pkgs; [
+          gnome.zenity
+        ];
       };
 
       packages = {

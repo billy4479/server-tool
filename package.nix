@@ -2,7 +2,7 @@
   lib,
   buildGoModule,
   go,
-  git,
+  gnome,
 }: let
   pname = "server-tool";
   version = "2.1.3";
@@ -10,7 +10,8 @@ in
   buildGoModule rec {
     inherit pname version;
     src = lib.cleanSource ./.;
-    nativeBuildInputs = [go git];
+    nativeBuildInputs = [go];
+    buildInputs = [gnome.zenity];
 
     vendorHash = "sha256-YoguesTG55+Cl5ieCF3FFQK3B6EMpjGNmEV8QHu1VKE=";
 
