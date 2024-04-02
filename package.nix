@@ -5,7 +5,7 @@
   gnome,
 }: let
   pname = "server-tool";
-  version = "2.1.3";
+  version = "2.1.4";
 in
   buildGoModule rec {
     inherit pname version;
