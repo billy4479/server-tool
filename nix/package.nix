@@ -15,7 +15,7 @@
 in
   buildGoModule rec {
     inherit pname version;
-    src = lib.cleanSource ./.;
+    src = lib.cleanSource ./..;
     nativeBuildInputs = [pkgs.makeWrapper];
 
     ldflags = ["-s" "-w" "-X 'github.com/billy4479/server-tool/lib.Version=${version}'"];
@@ -25,8 +25,6 @@ in
     buildPhase = ''
       go build -o ${pname} .
     '';
-
-    patches = [./0001-Force-system-s-java.patch];
 
     installPhase = ''
       install -Dm755 ${pname} $out/bin/${pname}

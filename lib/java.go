@@ -154,10 +154,17 @@ func installJava(javaVersion int, progress JavaDownloadProgress) error {
 }
 
 func EnsureJavaIsInstalled(javaVersion int, progress JavaDownloadProgress) (string, error) {
-	if C.UseSystemJava {
+	_, err := os.Stat("/etc/NIXOS")
+	isNix := err == nil
+
+	if C.UseSystemJava || isNix {
 		L.Info.Println("Using system Java")
 
 		path := "java"
+		if isNix {
+			path = ""
+		}
+
 		switch javaVersion {
 		case 8:
 			if p := os.Getenv("JAVA_8"); p != "" {
@@ -170,11 +177,15 @@ func EnsureJavaIsInstalled(javaVersion int, progress JavaDownloadProgress) (stri
 		default:
 		}
 
+		if path == "" {
+			return "", errors.New("System Java not found")
+		}
+
 		return path, nil
 	}
 
 	javaVersionString := fmt.Sprint(javaVersion)
-	err := os.MkdirAll(JavaDir(), 0700)
+	err = os.MkdirAll(JavaDir(), 0700)
 	if err != nil {
 		return "", nil
 	}
