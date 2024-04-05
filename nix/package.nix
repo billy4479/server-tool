@@ -12,6 +12,10 @@
       version: "--set 'JAVA_${version}' '${lib.getExe pkgs."jdk${version}"}'"
     )
     enabledJavaVersions;
+
+  pathPrefix = lib.makeBinPath (
+    with pkgs; [gnome.zenity git]
+  );
 in
   buildGoModule rec {
     inherit pname version;
@@ -33,7 +37,7 @@ in
     postFixup =
       ''
         wrapProgram $out/bin/${pname} \
-                    --prefix PATH : ${lib.makeBinPath [pkgs.gnome.zenity]} \
+                    --prefix PATH : ${pathPrefix} \
       ''
       + lib.concatStringsSep " \\\n" jres;
 
