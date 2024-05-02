@@ -2,7 +2,7 @@
   pkgs,
   lib,
   buildGoModule,
-  enabledJavaVersions ? ["8" "17"],
+  enabledJavaVersions ? ["8" "17" "21"],
 }: let
   pname = "server-tool";
   version = "2.1.4";
