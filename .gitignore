@@ -3,4 +3,4 @@ build/
 .server-tool/
 test-dir
 .direnv/
-result/
+/result
