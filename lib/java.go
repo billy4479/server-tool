@@ -165,16 +165,8 @@ func EnsureJavaIsInstalled(javaVersion int, progress JavaDownloadProgress) (stri
 			path = ""
 		}
 
-		switch javaVersion {
-		case 8:
-			if p := os.Getenv("JAVA_8"); p != "" {
-				path = p
-			}
-		case 17:
-			if p := os.Getenv("JAVA_17"); p != "" {
-				path = p
-			}
-		default:
+		if p := os.Getenv(fmt.Sprintf("JAVA_%d", javaVersion)); p != "" {
+			path = p
 		}
 
 		if path == "" {
