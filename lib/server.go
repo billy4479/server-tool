@@ -129,9 +129,7 @@ func (s *Server) Start(gui bool, javaProgress JavaDownloadProgress, gitProgress 
 
 	err := runJar(s, gui, javaProgress)
 	if err != nil {
-		if err == ErrExitedAbnormally {
-			L.Error.Println("The server terminated with an error. Git will not update. You should first go figure out what happened to the server then git-unfuck")
-		}
+		L.Error.Println("The server terminated with an error. Git will not update. You should first go figure out what happened to the server then git-unfuck")
 		return err
 	}
 

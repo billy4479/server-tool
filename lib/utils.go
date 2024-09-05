@@ -1,7 +1,7 @@
 package lib
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -9,10 +9,6 @@ import (
 )
 
 const ProgName = "server-tool"
-
-var (
-	ErrExitedAbnormally = errors.New("Aborted due to a failed command")
-)
 
 func MakeCacheDir() (err error) {
 	if C.Application.CacheDir == "" {
@@ -31,18 +27,18 @@ func MakeCacheDir() (err error) {
 }
 
 func RunCmdPretty(workDir string, name string, args ...string) error {
-	{
-		cmdLine := name
-		if filepath.IsAbs(name) {
-			_, cmdLine = path.Split(name)
-		}
 
-		for _, arg := range args {
-			cmdLine += " " + arg
-		}
-
-		L.Debug.Printf("Running \"%s\"\n", cmdLine)
+	cmdLine := name
+	if filepath.IsAbs(name) {
+		_, cmdLine = path.Split(name)
 	}
+
+	for _, arg := range args {
+		cmdLine += " " + arg
+	}
+
+	L.Debug.Printf("Running \"%s\"\n", cmdLine)
+
 	cmd := exec.Command(name, args...)
 	cmd.Stdout = L.Writer
 	cmd.Stderr = L.Writer
@@ -60,7 +56,7 @@ func RunCmdPretty(workDir string, name string, args ...string) error {
 		}
 		if !cmd.ProcessState.Success() {
 			L.Warn.Printf("Command exited with code %d\n", cmd.ProcessState.ExitCode())
-			return ErrExitedAbnormally
+			return fmt.Errorf("Command failed with code %d. The command that failed was %s", cmd.ProcessState.ExitCode(), cmdLine)
 		}
 	}
 
