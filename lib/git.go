@@ -101,7 +101,7 @@ func UnfuckCommit(baseDir string) error {
 		return err
 	}
 
-	err = RunCmdPretty(baseDir, "git", "commit", "-m", "Unfuck: manual commit")
+	err = RunCmdPretty(baseDir, "git", "commit", "--allow-empty", "-m", "Unfuck: manual commit")
 	if err != nil {
 		return err
 	}
