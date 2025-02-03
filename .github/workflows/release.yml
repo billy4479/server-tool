@@ -8,10 +8,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ">=1.18"
 
@@ -19,103 +19,78 @@ jobs:
         run: make build-release
 
       - name: Upload Windows build
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "server-tool.windows.exe"
           path: "./build/server-tool.windows.exe"
 
       - name: Upload Linux build
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "server-tool.linux"
           path: "./build/server-tool.linux"
 
   release:
-    name: Create Github Release
+    name: Create GitHub Release
     needs: [build]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Get short tag name
-        uses: jungwinter/split@v1
+        uses: winterjung/split@v2
         id: split
         with:
           msg: ${{ github.ref }}
-          seperator: /
+          separator: /
       - name: Create Release
-        id: create_release
-        uses: ncipollo/release-action@v1
+        uses: softprops/action-gh-release@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.split.outputs._2 }}
+          tag_name: ${{ steps.split.outputs._2 }}
           name: ${{ steps.split.outputs._2 }}
-          commit: ${{ github.sha }}
+          commitish: ${{ github.sha }}
           draft: false
           prerelease: false
 
   publish-win:
     needs: [release]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Get short tag name
         uses: jungwinter/split@v1
         id: split
         with:
           msg: ${{ github.ref }}
-          seperator: /
+          separator: /
       - name: Fetch artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: server-tool.windows.exe
           path: server-tool.windows.exe
-      - name: Get release
-        id: get_release_info
-        uses: leahlundqvist/get-release@v1.3.1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          tag_name: ${{ steps.split.outputs._2 }}
       - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-          asset_path: server-tool.windows.exe/server-tool.windows.exe
-          asset_name: server-tool.windows.exe
-          asset_content_type: application/octet-stream
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: server-tool.windows.exe/server-tool.windows.exe
 
   publish-linux:
     needs: [release]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Get short tag name
         uses: jungwinter/split@v1
         id: split
         with:
           msg: ${{ github.ref }}
-          seperator: /
+          separator: /
       - name: Fetch artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: server-tool.linux
           path: server-tool.linux
-      - name: Get release
-        id: get_release_info
-        uses: leahlundqvist/get-release@v1.3.1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          tag_name: ${{ steps.split.outputs._2 }}
       - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-          asset_path: server-tool.linux/server-tool.linux
-          asset_name: server-tool.linux
-          asset_content_type: application/octet-stream
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: server-tool.linux/server-tool.linux
